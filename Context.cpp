@@ -6,7 +6,7 @@
 
 namespace PCSC {
     Context::Context() {
-        // Создаем контекст.
+        // Crée un contexte.
         Status st = SCardEstablishContext(SCARD_SCOPE_USER, NULL, NULL, &hContext);
         XFS::Logger() << "SCardEstablishContext: " << st;
     }

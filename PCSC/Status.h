@@ -8,13 +8,13 @@
 
 // Для HRESULT и LONG
 #include <windef.h>
-// CEN/XFS API -- для кодов ошибок
+// CEN/XFS API -- pour les codes d'erreur
 #include <xfsapi.h>
-// PC/CS API -- для кодов ошибок
+// PC/CS API -- pour les codes d'erreur
 #include <winscard.h>
 
 namespace PCSC {
-    /** Результат выполнения PC/SC функций. */
+    /** Résultat de l'exécution des fonctions PC/SC. */
     class Status : public Enum<LONG, Status> {
         typedef Enum<LONG, Status> _Base;
     public:
@@ -120,7 +120,7 @@ namespace PCSC {
             //      Code - is the facility's status code
             return _Base::name(names, mValue & 0x0000FFFF);
         }
-        /// Конвертирует код возврата функций PC/SC в код возврата функций XFS.
+        /// Convertit le code de retour des fonctions PC/SC en code de retour des fonctions XFS.
         inline HRESULT translate() const {
             switch (mValue) {/*
                 case SCARD_S_SUCCESS:                 return WFS_SUCCESS;               // NO_ERROR
@@ -188,20 +188,20 @@ namespace PCSC {
                 case SCARD_W_CACHE_ITEM_STALE:        return ; // _HRESULT_TYPEDEF_(0x80100071L)
                 case SCARD_W_CACHE_ITEM_TOO_BIG:      return ; // _HRESULT_TYPEDEF_(0x80100072L)
                 */
-                // Успешно
+                // Succès
                 case SCARD_S_SUCCESS:           return WFS_SUCCESS;
-                // Некорректный хендл карты (hCard)
+                // Handle de carte incorrect (hCard)
                 case SCARD_E_INVALID_HANDLE:    return WFS_ERR_INVALID_HSERVICE;
-                // Ресурсный менеджер подсистемы PC/SC не запущен
+                // Le gestionnaire de ressources du sous-système PC/SC n'est pas démarré
                 case SCARD_E_NO_SERVICE:        return WFS_ERR_INTERNAL_ERROR;
-                // Считыватель был отключен
+                // Le lecteur a été déconnecté
                 case SCARD_E_READER_UNAVAILABLE:return WFS_ERR_CONNECTION_LOST;
-                // Кто-то эксклюзивно владеет картой
+                // Quelqu'un détient exclusivement la carte
                 case SCARD_E_SHARING_VIOLATION: return WFS_ERR_LOCKED;
-                // Внутренняя ошибка взаимодействия с устройством
+                // Erreur interne d'interaction avec le périphérique
                 case SCARD_F_COMM_ERROR:        return WFS_ERR_HARDWARE_ERROR;
             }
-            // TODO: Уточнить тип ошибки, возвращаемой в случае, если трансляция кодов ошибок не удалась.
+            // TODO: Préciser le type d'erreur retourné si la traduction des codes d'erreur a échoué.
             return WFS_ERR_INTERNAL_ERROR;
         }
     };

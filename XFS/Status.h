@@ -6,9 +6,9 @@
 #include "Utils/CTString.h"
 #include "Utils/Enum.h"
 
-// Для DWORD
+// пїЅпїЅпїЅ DWORD
 #include <windef.h>
-// Коды ошибок
+// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 #include <xfsapi.h>
 
 namespace XFS {

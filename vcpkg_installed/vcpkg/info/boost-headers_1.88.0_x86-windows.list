@@ -1,0 +1,14 @@
+x86-windows/
+x86-windows/include/
+x86-windows/include/boost/
+x86-windows/include/boost/headers/
+x86-windows/include/boost/headers/.gitkeep
+x86-windows/share/
+x86-windows/share/boost-headers/
+x86-windows/share/boost-headers/copyright
+x86-windows/share/boost-headers/vcpkg.spdx.json
+x86-windows/share/boost-headers/vcpkg_abi_info.txt
+x86-windows/share/boost_headers/
+x86-windows/share/boost_headers/boost_headers-config-version.cmake
+x86-windows/share/boost_headers/boost_headers-config.cmake
+x86-windows/share/boost_headers/boost_headers-targets.cmake

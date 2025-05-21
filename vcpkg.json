@@ -1,0 +1,14 @@
+{
+    "name": "pcsc-xfs-bridge",
+    "version": "1.0.0",
+    "description": "Bridge between PC/SC and CEN/XFS protocols",
+    "homepage": "https://github.com/yistabraq/pcsc-cenxfs-bridge",
+    "dependencies": [
+      "boost-chrono",
+      "boost-thread",
+      "boost-date-time",
+      "boost-multi-index"
+    ],
+    "builtin-baseline": "87b407e27f38d6bbfbad65d37ac787c2efbd7d07"
+  }
+  

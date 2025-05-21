@@ -1,4 +1,4 @@
-Текст лицензии:
+Texte de la licence :
 ```
 The MIT License
 
@@ -22,27 +22,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
-Перевод лицензии (не является юридически значимым, для ознакомления):
+Traduction de la licence (n'a pas de valeur juridique, pour information uniquement) :
 ```
-Лицензия MIT
+Licence MIT
 
 Copyright (c) 2014 Mingun
 
-Данная лицензия разрешает лицам, получившим копию данного программного обеспечения
-и сопутствующей документации (в дальнейшем именуемыми «Программное Обеспечение»),
-безвозмездно использовать Программное Обеспечение без ограничений, включая неограниченное
-право на использование, копирование, изменение, добавление, публикацию, распространение,
-сублицензирование и/или продажу копий Программного Обеспечения, также как и лицам,
-которым предоставляется данное Программное Обеспечение, при соблюдении следующих условий:
+Cette licence permet aux personnes qui obtiennent une copie de ce logiciel
+et de sa documentation associée (ci-après dénommés "Logiciel") d'utiliser
+le Logiciel sans restriction, y compris le droit illimité d'utiliser, copier,
+modifier, fusionner, publier, distribuer, sous-licencier et/ou vendre des copies
+du Logiciel, et de permettre aux personnes à qui le Logiciel est fourni de le faire,
+sous réserve des conditions suivantes :
 
-Указанное выше уведомление об авторском праве и данные условия должны быть включены
-во все копии или значимые части данного Программного Обеспечения.
+La notice de copyright ci-dessus et cette notice d'autorisation doivent être incluses
+dans toutes les copies ou parties substantielles du Logiciel.
 
-ДАННОЕ ПРОГРАММНОЕ ОБЕСПЕЧЕНИЕ ПРЕДОСТАВЛЯЕТСЯ «КАК ЕСТЬ», БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ,
-ЯВНО ВЫРАЖЕННЫХ ИЛИ ПОДРАЗУМЕВАЕМЫХ, ВКЛЮЧАЯ, НО НЕ ОГРАНИЧИВАЯСЬ ГАРАНТИЯМИ ТОВАРНОЙ
-ПРИГОДНОСТИ, СООТВЕТСТВИЯ ПО ЕГО КОНКРЕТНОМУ НАЗНАЧЕНИЮ И ОТСУТСТВИЯ НАРУШЕНИЙ ПРАВ.
-НИ В КАКОМ СЛУЧАЕ АВТОРЫ ИЛИ ПРАВООБЛАДАТЕЛИ НЕ НЕСУТ ОТВЕТСТВЕННОСТИ ПО ИСКАМ О
-ВОЗМЕЩЕНИИ УЩЕРБА, УБЫТКОВ ИЛИ ДРУГИХ ТРЕБОВАНИЙ ПО ДЕЙСТВУЮЩИМ КОНТРАКТАМ, ДЕЛИКТАМ
-ИЛИ ИНОМУ, ВОЗНИКШИМ ИЗ, ИМЕЮЩИМ ПРИЧИНОЙ ИЛИ СВЯЗАННЫМ С ПРОГРАММНЫМ ОБЕСПЕЧЕНИЕМ
-ИЛИ ИСПОЛЬЗОВАНИЕМ ПРОГРАММНОГО ОБЕСПЕЧЕНИЯ ИЛИ ИНЫМИ ДЕЙСТВИЯМИ С ПРОГРАММНЫМ ОБЕСПЕЧЕНИЕМ.
+LE LOGICIEL EST FOURNI "TEL QUEL", SANS GARANTIE D'AUCUNE SORTE, EXPRESSE OU
+IMPLICITE, Y COMPRIS, MAIS SANS S'Y LIMITER, LES GARANTIES DE QUALITÉ MARCHANDE,
+D'ADÉQUATION À UN USAGE PARTICULIER ET DE NON-VIOLATION. EN AUCUN CAS LES AUTEURS
+OU DÉTENTEURS DU COPYRIGHT NE SERONT RESPONSABLES DE TOUTE RÉCLAMATION, DOMMAGE OU AUTRE
+RESPONSABILITÉ, QUE CE SOIT DANS UNE ACTION CONTRACTUELLE, DÉLICTUELLE OU AUTRE, DÉCOULANT DE,
+OU EN RELATION AVEC LE LOGICIEL OU L'UTILISATION OU D'AUTRES TRANSACTIONS DANS LE LOGICIEL.
 ```

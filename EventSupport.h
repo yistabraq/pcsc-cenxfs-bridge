@@ -8,15 +8,15 @@
 #include <cassert>
 #include <set>
 #include <vector>
-// Для std::pair
+// Pour std::pair
 #include <utility>
-// Для HWND и DWORD
+// Pour HWND et DWORD
 #include <windef.h>
 
 class EventSubscriber {
-    /// Окно, которое должно получать указанные события.
+    /// Fenêtre qui doit recevoir les événements spécifiés.
     HWND hWnd;
-    /// Битовая маска активированных для получения событий:
+    /// Masque de bits des événements activés pour la réception :
     ///   SERVICE_EVENTS
     ///   USER_EVENTS
     ///   SYSTEM_EVENTS
@@ -26,11 +26,11 @@ class EventSubscriber {
     friend class EventNotifier;
 public:
     /*enum Event {
-        /// Изменение статуса устройства (например, доступность).
+        /// Changement de l'état du périphérique (par exemple, disponibilité).
         Service = SERVICE_EVENTS,
-        /// Устройство требует внимания со стороны пользователя, например, замены бумаги в принтере.
+        /// Le périphérique nécessite une attention de l'utilisateur, par exemple, le remplacement du papier dans une imprimante.
         User    = USER_EVENTS,
-        /// События от "железа", например, ошибки "железа", недостаочно места на диске, несоответствие версий.
+        /// Événements matériels, par exemple, erreurs matérielles, manque d'espace disque, incompatibilité de version.
         System  = SYSTEM_EVENTS,
         Execute = EXECUTE_EVENTS,
     };
@@ -44,12 +44,12 @@ public:
         return hWnd < other.hWnd;
     }
 public:
-    /// Добавляет к маске новое отслеживаемое событие.
+    /// Ajoute un nouvel événement suivi au masque.
     void add(DWORD event) {
         mask |= event;
     }
-    /// Удаляет из маски указанный класс отслеживаемых событий.
-    /// @return `true`, если после удаления события больше нет подписки ни на одно из событий, иначе `false`.
+    /// Supprime la classe d'événements spécifiée du masque.
+    /// @return `true` si après la suppression il n'y a plus d'abonnement à aucun événement, sinon `false`.
     bool remove(DWORD event) {
         mask &= ~event;
         return mask == 0;
@@ -69,48 +69,48 @@ public:
     void add(HWND hWnd, DWORD event) {
         assert(hWnd != NULL && "Attempt to subscribe NULL window to events");
         InsertResult r = subscribers.insert(EventSubscriber(hWnd, event));
-        // Если указанный элемент уже существовал в карте, то он не будет заменен,
-        // нам это и не нужно. Вместо этого нужно обновить существующий элемент.
+        // Si l'élément spécifié existait déjà dans la carte, il ne sera pas remplacé,
+        // et nous n'en avons pas besoin. Au lieu de cela, nous devons mettre à jour l'élément existant.
         if (r.second) {
-            // Преобразование безопасно, т.к. ключ для std::set не меняется.
+            // La conversion est sûre, car la clé pour std::set ne change pas.
             const_cast<EventSubscriber&>(*r.first).add(event);
         }
     }
     void remove(HWND hWnd, DWORD event) {
-        // NULL означает, что производится отписка для всех окон
+        // NULL signifie que la désinscription se fait pour toutes les fenêtres
         if (hWnd == NULL) {
             std::vector<HWND> forRemove;
             for (SubscriberList::iterator it = subscribers.begin(); it != subscribers.end(); ++it) {
-                // Удаляем класс событий. Если это был последний интересуемый класс событий,
-                // то удаляем и подписчика. Если указан 0, то отписка идет от всех классов событий.
+                // Supprime la classe d'événements. Si c'était la dernière classe d'événements intéressée,
+                // supprime également l'abonné. Si 0 est spécifié, la désinscription se fait pour toutes les classes d'événements.
                 if (event == 0 || const_cast<EventSubscriber&>(*it).remove(event)) {
-                    // Для C++11 можно было бы использовать it = subscribers.erase(it);
-                    // Но хочется остаться в рамках C++03
+                    // Pour C++11, on aurait pu utiliser it = subscribers.erase(it);
+                    // Mais on préfère rester dans le cadre de C++03
                     forRemove.push_back(it->hWnd);
                 }
             }
             for (std::vector<HWND>::const_iterator it = forRemove.begin(); it != forRemove.end(); ++it) {
-                // Второй параметр конструктора не важен.
+                // Le deuxième paramètre du constructeur n'est pas important.
                 subscribers.erase(EventSubscriber(*it, 0));
             }
         } else {
             SubscriberList::iterator it = subscribers.find(EventSubscriber(hWnd, event));
             if (it != subscribers.end()) {
-                // Удаляем класс событий. Если это был последний интересуемый класс событий,
-                // то удаляем и подписчика. Если указан 0, то отписка идет от всех классов событий.
+                // Supprime la classe d'événements. Si c'était la dernière classe d'événements intéressée,
+                // supprime également l'abonné. Si 0 est spécifié, la désinscription se fait pour toutes les classes d'événements.
                 if (event == 0 || const_cast<EventSubscriber&>(*it).remove(event)) {
                     subscribers.erase(it);
                 }
             }
         }
     }
-    /// Удаляет всех подписчиков на события.
+    /// Supprime tous les abonnés aux événements.
     void clear() {
         subscribers.clear();
     }
-    /** Уведомляет всех подписчиков об указанном событии.
-    @param resultGenerator Функция, которая должна вернуть результат типа XFS::Result.
-           Данная функция вызывается для каждого подписчика на событие. 
+    /** Notifie tous les abonnés de l'événement spécifié.
+    @param resultGenerator Fonction qui doit retourner un résultat de type XFS::Result.
+           Cette fonction est appelée pour chaque abonné à l'événement.
     */
     template<class F>
     void notify(DWORD event, F resultGenerator) const {

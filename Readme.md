@@ -1,112 +1,132 @@
 PC/SC-CEN/XFS-bridge
 ====================
-Данный проект реализует мост между протоколами [PC/SC][1] (протокол для общения c smart-картами)
-и протоколом [CEN/XFS][2], используемом банкоматным ПО для доступа к устройствам, в том числе
-чиповым считывателям карт.
+This project implements a bridge between [PC/SC][1] protocol (protocol for smart card communication)
+and [CEN/XFS][2] protocol, used by ATM software to access devices, including chip card readers.
 
-Лицензия
---------
-Лицензия MIT. Вкратце, возможно бесплатное использование в коммерческих и открытых проектах. Текст
-лицензии на русском и английском языках в файле LICENSE.md. Юридическую силу имеет только английский
-вариант.
+License
+-------
+MIT License. In short, free use is allowed in both commercial and open source projects. The license text
+is available in both Russian and English in the LICENSE.md file. Only the English version is legally binding.
 
-Зависимости
+Dependencies
 -----------
-1. Boost (должна быть прописана переменная окружения `%BOOST_ROOT%`, указывающая на корневой каталог
-boost-а, т.е. каталог, содержащий папки libs, doc, stage и т.п. предполагается, что boost собран в
-каталог по умолчанию, коим является stage)
+1. Boost (environment variable `%BOOST_ROOT%` must be set, pointing to the root directory of boost,
+   i.e., the directory containing folders libs, doc, stage, etc. It is assumed that boost is built in
+   the default directory, which is stage)
     1. `boost.chrono`
     2. `boost.thread`
-    3. `boost.date_time` (зависимость от `boost.thread`)
+    3. `boost.date_time` (dependency of `boost.thread`)
 2. [XFS SDK][1]
-    1. взять можно у проекта [freexfs][4]. Там же содержится и документация.
-    2. Также можно взять на официальном FTP-сайте, но его достаточно трудно отыскать. На официальном
-       сайте группы CEN/XFS найти ссылки на документацию не удалось, к счастью, пользователь **winner13**
-       в форума [bankomatchik.ru][6] каким-то чудом отыскал [FTP-ссылку][7].
-3. Подсистема PC/SC являтется частью SDK Windows.
+    1. Can be obtained from the [freexfs][4] project. Documentation is also available there.
+    2. Can also be obtained from the official FTP site, but it's quite difficult to find. Links to
+       documentation could not be found on the official CEN/XFS group website, but fortunately, user
+       **winner13** on the [bankomatchik.ru][6] forum somehow found the [FTP link][7].
+3. PC/SC subsystem is part of the Windows SDK.
 
-Сборка
-------
-Подготовить зависимости: скачать буст и собрать необходимые библиотеки. Сборку можно выполнить следующим образом:
-1. Запустить командную строку Visual Studio
-2. Перейти в `%BOOST_ROOT%`
-3. Выполнить команду `bootstrap.bat msvc` для сборки инструмента сборки буста
-4. Выполнить команду `build-boost.bat` из корня проекта для сбора необходимых библиотек в нужном варианте
+Build
+-----
+Prepare dependencies: download boost and build the required libraries. Build can be performed as follows:
 
-Запустить командную строку Visual Studio и выполнить в ней команду
+### Method 1: Using CMake (Recommended)
+
+Prerequisites:
+1. CMake 3.10 or higher
+2. Visual Studio 2019 or higher
+3. Boost (see above)
+4. XFS SDK (see above)
+
+Required environment variables:
+- `BOOST_ROOT`: Path to Boost installation
+- `XFS_SDK`: Path to XFS SDK
+
+To compile:
+```batch
+build.bat
+```
+
+The script will:
+1. Check prerequisites
+2. Create a `build` directory
+3. Configure the project with CMake
+4. Build the project
+
+The resulting DLL will be in `build/Release/PCSCspi.dll`
+
+### Method 2: Old method (make.bat)
+
+Launch Visual Studio command prompt and run:
 ```
 make
 ```
-Либо открыть обычную командную строку в выполнить команды, предварительно заменив `%VC_INSTALL_DIR%`
-на путь к установленной MSVC. Так как Kalignite собран под x86, то и библиотеку будем собирать под
-эту архитектуру. Естественно, когда появится 64-битная версия, необходимо будет использовать `x86_amd64`:
+Or open a regular command prompt and run the commands, first replacing `%VC_INSTALL_DIR%`
+with the path to installed MSVC. Since Kalignite is built for x86, we will build the library for
+this architecture. Naturally, when a 64-bit version appears, it will be necessary to use `x86_amd64`:
 ```
 "%VC_INSTALL_DIR%\VC\vcvarsall.bat" x86
 make
 ```
 
-Используется C++03. Проверена сборка следующими компиляторами:
+Uses C++03. Build has been tested with the following compilers:
 
 1. MSVC 2005
 2. MSVC 2008
 3. MSVC 2013
 
-Архитектура
+Architecture
 -----------
-При загрузке динамической библиотеки создается глобальный объект `Manager`, в конструкторе которого
-инициализируется подсистема PC/SC и запускается поток опроса изменений в устройствах и подключения
-новых устройств. В деструкторе глобального объекта соединение с подсистемой PC/SC закрывается, это
-происходит автоматически, когда менеджер XFS выгружает библиотеку.
+When the dynamic library is loaded, a global `Manager` object is created, in whose constructor
+the PC/SC subsystem is initialized and a thread is started to monitor device changes and new device
+connections. In the global object's destructor, the connection to the PC/SC subsystem is closed, this
+happens automatically when the XFS manager unloads the library.
 
-Хотя может показаться, что можно было напрямую мапить хендл сервис-провайдера (`HSERVICE`), на хендл
-контекста PC/SC (`SCARDCONTEXT`), этого не делается потому, что функция `SCardListReaders` блокирующая,
-а она требует хендл контекста. Таким образом, если бы на каждый сервис-провайдер был заведен свой PC/SC
-контекст, потребовалось бы на каждый создавать по своему потоку для опроса изменений в устройствах.
+Although it might seem that we could directly map the service provider handle (`HSERVICE`) to the PC/SC
+context handle (`SCARDCONTEXT`), this is not done because the `SCardListReaders` function is blocking,
+and it requires a context handle. Thus, if each service provider had its own PC/SC context, we would
+need to create a separate thread for each one to monitor device changes.
 
-Класс `Manager` содержит список задач на чтение карты, которые создаются при вызове метода `WFPExecute`,
-и список сервисов, представляющих открытые XFS-менеджером сервисы (через `WFPOpen`).
+The `Manager` class contains a list of card reading tasks, which are created when the `WFPExecute` method
+is called, and a list of services representing XFS manager opened services (via `WFPOpen`).
 
-Когда происходит событие PC/SC, отдельный поток сначала уведомляет все подписавшиеся окна (через
-`WFPRegister`) на изменения (естественно, выполняется трансляция события из PC/SC в XFS форму), а
-затем уведомляет все задачи обо всех произошедших изменениях. Таким образом реализуется требование
-XFS, что все события должны быть испущены до того, как произойдет `WFS_xxx_COMPLETE`-событие.
+When a PC/SC event occurs, a separate thread first notifies all subscribed windows (via
+`WFPRegister`) about changes (naturally, the event is translated from PC/SC to XFS format), and
+then notifies all tasks about all changes that have occurred. This implements the XFS requirement
+that all events must be emitted before the `WFS_xxx_COMPLETE` event occurs.
 
-Если задача считает, что изменение ей интересно, она генерирует событие `WFS_xxx_COMPLETE` и ее метод
-`match` возвращает `true`, в результате чего она удаляется из списка задач.
+If a task considers the change interesting, it generates a `WFS_xxx_COMPLETE` event and its `match`
+method returns `true`, as a result of which it is removed from the task list.
 
-События о завершении отправляются Windows функцией PostMessage, которая укладывает ее в очередь сообщений
-потока, который обрабатывает события завершения. На совести конечного приложения, что оно предоставляет
-хендлы окон, которые существуют в одном потоке, иначе `WFS_xxx_COMPLETE`-событие может прийти раньше,
-чем прочие виды событий. Кроме того, если события приложения обрабатывает в другом потоке, чем асинхронные
-вызовы сервис-провайдера, то события могут прийти раньше, чем завершится асинхронный вызов, их инициирующий.
-На совести приложения работать правильно в таком случае и не терять уведомления. Это особенность XFS API,
-оно предъявляет очень жесткие требования к приложению.
+Completion events are sent using the Windows PostMessage function, which places them in the message queue
+of the thread that handles completion events. It is the responsibility of the end application to provide
+window handles that exist in a single thread, otherwise the `WFS_xxx_COMPLETE` event may arrive before
+other types of events. Moreover, if the application processes events in a different thread than the
+asynchronous service provider calls, then events may arrive before the asynchronous call that initiated
+them completes. It is the application's responsibility to work correctly in such cases and not lose
+notifications. This is a feature of the XFS API, which imposes very strict requirements on the application.
 
-Настройки
----------
-Большинство настроек предназначены для обхода проблем, обнаруженных в процессе тестирования, но некоторые
-управляют штатным функционалом сервис-провайдера. Все настройки выполняются в ветке реестра, под веткой
-с провайдером логического сервиса (`HKEY_LOCAL_MACHINE\SOFTWARE\XFS\SERVICE_PROVIDERS\<провайдер>`).
-Все `DWORD` значения в таблице являются логическими флагами, со значением `0` -- сброшены, любое другое --
-выставлен:
+Settings
+--------
+Most settings are intended to work around issues discovered during testing, but some
+control the standard functionality of the service provider. All settings are made in the registry under
+the logical service provider branch (`HKEY_LOCAL_MACHINE\SOFTWARE\XFS\SERVICE_PROVIDERS\<provider>`).
+All `DWORD` values in the table are logical flags, with value `0` -- cleared, any other value -- set:
 
-Название        |Тип     |Назначение
-----------------|--------|----------
-ReaderName      |`REG_SZ`|PC/SC название считывателя, с которым должен работать данный провайдер. Если параметр пустой или отсутствует, то слушаются все подключенные считыватели и используется первый, в который будет вставлена карточка (это делается каждый раз, т.е. если карточку вытащили из первого считывателя и вставили во второй, то работа будет происходить со вторым считывателем). Если не пустой, то событие вставки карты будет обрабатываться только от указанного считывателя
-Exclusive       |`DWORD` |Если флаг установлен, то считыватель будет использовать карту в монопольном режиме (`SCARD_SHARE_EXCLUSIVE`), т.е. никто, кроме сервис-провайдера, не сможет общаться с картой одновременно. Если сброшен или отсутсвует, то карта открывается в совместном режиме (`SCARD_SHARE_SHARED`)
-**Workarounds** |        |Подраздел -- обходы багов
-CorrectChipIO   |`DWORD` |Анализировать длину передаваемых чипу команд и корректировать ее в соответствии с тем, что передается в заголовке команды. Kalignite может передавать лишние байты в команде чтения, а это вызывает ошибку у функции `SCardTransmit`. Если сброшен или отсутствует, то анализ не производится
-CanEject        |`DWORD` |Сообщать, что устройство умеет извлекать карты в возможностях устройства и принимать команду извлечения карты (`WFS_CMD_IDC_EJECT_CARD`). При этом ничего не делается. Если сброшен или отсутствует, то в возможностях сообщать, что команда не поддерживается, а при получении этой команды возвращать ошибку **неподдерживаемая команда** (`WFS_ERR_UNSUPP_COMMAND`). Kalignite пытается выдавать карту, даже если эта возможность не поддерживается, и не ожидает, что команда не будет выполнена, падая с Fatal Error в случае кода ответа, отличного от успеха
-**Track2**      |        |Подраздел **Workarounds** -- настройки второй дорожки
-_(по умолчанию)_|`REG_SZ`|Значение второй дорожки, сообщаемое провайдером, без начального и конечного разделителей, как будет отдано приложению. Значение сообщается, только если флаг `Report` взведен
-Report          |`DWORD` |Сообщать о возможности чтения второй магнитной дорожки. Если флаг взведен, а значение трека пустое, то при чтении возвращается код ошибки **данные отсутствуют** (`WFS_IDC_DATAMISSING`). Если флаг сброшен, то в возможностях устройства сообщается, что чтение второй дорожки не поддерживается. Kalignite требует, чтобы вторая дорожка была прочитана, даже если в условиях чтения указать не читать вторую дорожку (на момент чтения все в порядке, но потом при работе сценария он падает с Fatal Error из-за отсутствия второй дорожки)
+Name           |Type     |Purpose
+---------------|---------|--------
+ReaderName     |`REG_SZ` |PC/SC reader name that this provider should work with. If the parameter is empty or missing, all connected readers are monitored and the first one into which a card is inserted is used (this is done each time, i.e., if the card is removed from the first reader and inserted into the second, work will proceed with the second reader). If not empty, then card insertion events will only be processed from the specified reader
+Exclusive      |`DWORD`  |If the flag is set, the reader will use the card in exclusive mode (`SCARD_SHARE_EXCLUSIVE`), i.e., no one except the service provider will be able to communicate with the card simultaneously. If cleared or missing, the card is opened in shared mode (`SCARD_SHARE_SHARED`)
+**Workarounds**|         |Subsection -- bug workarounds
+CorrectChipIO  |`DWORD`  |Analyze the length of commands sent to the chip and correct it according to what is transmitted in the command header. Kalignite may transmit extra bytes in the read command, which causes an error in the `SCardTransmit` function. If cleared or missing, no analysis is performed
+CanEject       |`DWORD`  |Report that the device can eject cards in device capabilities and accept the card ejection command (`WFS_CMD_IDC_EJECT_CARD`). Nothing is actually done. If cleared or missing, report in capabilities that the command is not supported, and when receiving this command return error **unsupported command** (`WFS_ERR_UNSUPP_COMMAND`). Kalignite tries to eject the card even if this capability is not supported, and does not expect the command to fail, crashing with Fatal Error if the response code is not success
+**Track2**     |         |Subsection of **Workarounds** -- track 2 settings
+_(default)_    |`REG_SZ` |Value of track 2 reported by the provider, without start and end separators, as will be given to the application. The value is only reported if the `Report` flag is set
+Report         |`DWORD`  |Report the ability to read magnetic track 2. If the flag is set and the track value is empty, reading returns error code **data missing** (`WFS_IDC_DATAMISSING`). If the flag is cleared, device capabilities report that reading track 2 is not supported. Kalignite requires track 2 to be read even if reading conditions specify not to read track 2 (at the time of reading everything is fine, but later when running the scenario it crashes with Fatal Error due to missing track 2)
 
-Протестированные считыватели
-----------------------------
-Для работы с Kaliginte-ом были активированы все обходы багов.
+Tested Readers
+-------------
+All bug workarounds were activated for working with Kalignite.
 
-1. [OMNIKEY 3121][5] (pcsc_scan знает его, как OMNIKEY AG Smart Card Reader USB 0) -- успешно работает
-2. [ACR38u][8] -- успешно работает
+1. [OMNIKEY 3121][5] (pcsc_scan knows it as OMNIKEY AG Smart Card Reader USB 0) -- works successfully
+2. [ACR38u][8] -- works successfully
 
 [1]: http://www.pcscworkgroup.com/
 [2]: http://www.cen.eu/work/areas/ict/ebusiness/pages/ws-xfs.aspx

@@ -9,30 +9,30 @@ Manager::Manager() : readerChangesMonitor(*this) {}
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Service& Manager::create(HSERVICE hService, const Settings& settings) {
     Service& result = services.create(*this, hService, settings);
-    // Прерываем ожидание потока на SCardGetStatusChange, т.к. необходимо доставить
-    // новому сервису информацию о всех существующих в данный момент считывателях.
+    // Interrompt l'attente du thread sur SCardGetStatusChange, car il est nécessaire de livrer
+    // au nouveau service des informations sur tous les lecteurs actuellement existants.
     readerChangesMonitor.cancel("Manager::create");
     return result;
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void Manager::notifyChanges(const SCARD_READERSTATE& state, bool deviceChange) {
-    // Сначала уведомляем подписанных слушателей об изменениях, и только затем
-    // пытаемся завершить задачи.
+    // Notifie d'abord les auditeurs abonnés des changements, et seulement ensuite
+    // essaie de terminer les tâches.
     services.notifyChanges(state, deviceChange);
     tasks.notifyChanges(state, deviceChange);
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void Manager::addTask(const Task::Ptr& task) {
     if (tasks.addTask(task)) {
-        // Прерываем ожидание потока на SCardGetStatusChange, т.к. ожидать теперь нужно
-        // до нового таймаута. Ожидание с новым таймаутом начнется автоматически.
+        // Interrompt l'attente du thread sur SCardGetStatusChange, car il faut maintenant attendre
+        // jusqu'à un nouveau délai d'attente. L'attente avec le nouveau délai démarrera automatiquement.
         readerChangesMonitor.cancel("Manager::addTask");
     }
 }
 bool Manager::cancelTask(HSERVICE hService, REQUESTID ReqID) {
     if (tasks.cancelTask(hService, ReqID)) {
-        // Прерываем ожидание потока на SCardGetStatusChange, т.к. ожидать теперь нужно
-        // до нового таймаута. Ожидание с новым таймаутом начнется автоматически.
+        // Interrompt l'attente du thread sur SCardGetStatusChange, car il faut maintenant attendre
+        // jusqu'à un nouveau délai d'attente. L'attente avec le nouveau délai démarrera automatiquement.
         readerChangesMonitor.cancel("Manager::cancelTask");
         return true;
     }

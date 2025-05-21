@@ -9,20 +9,20 @@
 #include <winscard.h>
 
 namespace PCSC {
-    /** Контекст представляет собой соединение к подсистеме PC/SC. Выделен в отдельный класс
-        главным образом по соображениям того, чтобы его деструктор закрывал контекст PC/SC
-        в самый последний момент, когда все остальные объекты, зависящие от контекста, уже
-        будут разрушены. Таким образом, предназначен для наследования от него класса менеджера.
+    /** Un contexte représente une connexion au sous-système PC/SC. Il est isolé dans une classe distincte
+        principalement pour s'assurer que son destructeur ferme le contexte PC/SC au tout dernier moment,
+        lorsque tous les autres objets dépendant du contexte auront déjà été détruits.
+        Ainsi, il est destiné à être hérité par la classe manager.
     */
     class Context : private boost::noncopyable {
-        /// Контекст подсистемы PC/SC.
+        /// Le contexte du sous-système PC/SC.
         SCARDCONTEXT hContext;
     public:
-        /// Открывает соединение к подсистеме PC/SC.
+        /// Ouvre une connexion au sous-système PC/SC.
         Context();
-        /// Закрывает соединение к подсистеме PC/SC.
+        /// Ferme la connexion au sous-système PC/SC.
         ~Context();
-    public:// Доступ к внутренностям
+    public:// Accès aux internes
         inline SCARDCONTEXT context() const { return hContext; }
     };
 } // namespace PCSC

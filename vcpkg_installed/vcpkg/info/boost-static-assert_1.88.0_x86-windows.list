@@ -1,0 +1,13 @@
+x86-windows/
+x86-windows/include/
+x86-windows/include/boost/
+x86-windows/include/boost/static_assert.hpp
+x86-windows/share/
+x86-windows/share/boost-static-assert/
+x86-windows/share/boost-static-assert/copyright
+x86-windows/share/boost-static-assert/vcpkg.spdx.json
+x86-windows/share/boost-static-assert/vcpkg_abi_info.txt
+x86-windows/share/boost_static_assert/
+x86-windows/share/boost_static_assert/boost_static_assert-config-version.cmake
+x86-windows/share/boost_static_assert/boost_static_assert-config.cmake
+x86-windows/share/boost_static_assert/boost_static_assert-targets.cmake

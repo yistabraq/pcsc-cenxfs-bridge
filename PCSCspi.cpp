@@ -6,27 +6,27 @@
 
 #include "XFS/Result.h"
 
-// Для strncpy.
+// Pour strncpy.
 #include <cstring>
-// Для std::size_t.
+// Pour std::size_t.
 #include <cstddef>
-// Для std::pair
+// Pour std::pair
 #include <utility>
 #include <vector>
 
-// CEN/XFS API -- Наш файл, так как оригинальный предназначен для использования
-// клиентами, а нам надо экспортировать функции, а не импортировать их.
+// CEN/XFS API -- Notre fichier, car l'original est destiné à être utilisé
+// par les clients, et nous devons exporter des fonctions, pas les importer.
 #include "xfsspi.h"
-// Определения для ридеров карт (Identification card unit (IDC))
+// Définitions pour les lecteurs de cartes (Identification card unit (IDC))
 #include <XFSIDC.h>
 
-// Линкуемся с библиотекой реализации стандарта PC/SC в Windows
+// Liaison avec la bibliothèque d'implémentation de la norme PC/SC dans Windows
 #pragma comment(lib, "winscard.lib")
-// Линкуемся с библиотекой реализации XFS
+// Liaison avec la bibliothèque d'implémentation XFS
 #pragma comment(lib, "msxfs.lib")
-// Линкуемся с библиотекой поддержки конфигурационных функций XFS
+// Liaison avec la bibliothèque de support des fonctions de configuration XFS
 #pragma comment(lib, "xfs_conf.lib")
-// Линкуемся с библиотекой для использования оконных функций (PostMessage)
+// Liaison avec la bibliothèque pour l'utilisation des fonctions de fenêtre (PostMessage)
 #pragma comment(lib, "user32.lib")
 
 #define MAKE_VERSION(major, minor) (((major) << 8) | (minor))
@@ -41,39 +41,38 @@ void safecopy(char (&dst)[N1], const char (&src)[N2]) {
     std::strncpy(dst, src, N1 < N2 ? N1 : N2);
 }
 
-/** При загрузке DLL будут вызваны конструкторы всех глобальных объектов и установится
-    соединение с подсистемой PC/SC. При выгрузке DLL вызовутся деструкторы глобальных
-    объектов и соединение автоматически закроется.
+/** Lors du chargement de la DLL, les constructeurs de tous les objets globaux seront appelés et une
+    connexion au sous-système PC/SC sera établie. Lors du déchargement de la DLL, les destructeurs des
+    objets globaux seront appelés et la connexion se fermera automatiquement.
 */
 Manager pcsc;
 extern "C" {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-/** Пытается определить наличие считывателя с указанным в настройках (ключ ReaderName) именем.
-    Если данный ключ не указан, привязывается к первому найденному считывателю. Если в данный
-    момент никаких считывателей в системе не обнаружено, ждет указанное в `dwTimeOut` время, пока
-    его не подключат.
+/** Tente de déterminer la présence d'un lecteur portant le nom spécifié dans les paramètres (clé ReaderName).
+    Si cette clé n'est pas spécifiée, se lie au premier lecteur trouvé. S'il n'y a actuellement
+    aucun lecteur détecté dans le système, attend le temps spécifié dans `dwTimeOut` jusqu'à ce qu'il soit connecté.
 
 @message WFS_OPEN_COMPLETE
 
-@param hService Хендл сессии, с которым необходимо соотнести хендл открываемой карты.
-@param lpszLogicalName Имя логического сервиса, настраивается в реестре HKLM\<user>\XFS\LOGICAL_SERVICES
-@param hApp Хендл приложения, созданного вызовом WFSCreateAppHandle.
-@param lpszAppID Идентификатор приложения. Может быть `NULL`.
+@param hService Handle de session auquel il faut associer le handle de la carte en cours d'ouverture.
+@param lpszLogicalName Nom du service logique, configuré dans le registre HKLM\<user>\XFS\LOGICAL_SERVICES
+@param hApp Handle de l'application, créé par l'appel à WFSCreateAppHandle.
+@param lpszAppID Identifiant de l'application. Peut être `NULL`.
 @param dwTraceLevel 
-@param dwTimeOut Таймаут (в мс), в течении которого необходимо открыть сервис. `WFS_INDEFINITE_WAIT`,
-       если таймаут не требуется.
-@param hWnd Окно, которое должно получить сообщение о завершении асинхронной операции.
-@param ReqID Идентификатора запроса, который нужно передать окну `hWnd` при завершении операции.
-@param hProvider Хендл данного сервис-провайдера. Может быть переден, например, в фукнцию WFMReleaseDLL.
-@param dwSPIVersionsRequired Диапазон требуетмых версий провайдера. 0x00112233 означает диапазон
-       версий [0.11; 22.33].
-@param lpSPIVersion Информация об открытом соединении (выходной параметр).
-@param dwSrvcVersionsRequired Специфичная для сервиса (карточный ридер) требуемая версия провайдера.
-       0x00112233 означает диапазон версий [0.11; 22.33].
-@param lpSrvcVersion Информация об открытом соединении, специфичная для вида провайдера (карточный ридер)
-       (выходной параметр).
-@return Всегда `WFS_SUCCESS`.
+@param dwTimeOut Délai d'attente (en ms) pendant lequel le service doit être ouvert. `WFS_INDEFINITE_WAIT`,
+       si aucun délai n'est requis.
+@param hWnd Fenêtre qui doit recevoir le message de fin de l'opération asynchrone.
+@param ReqID Identifiant de la requête qui doit être passé à la fenêtre `hWnd` à la fin de l'opération.
+@param hProvider Handle de ce fournisseur de services. Peut être passé, par exemple, à la fonction WFMReleaseDLL.
+@param dwSPIVersionsRequired Plage de versions du fournisseur requises. 0x00112233 signifie la plage
+       de versions [0.11; 22.33].
+@param lpSPIVersion Informations sur la connexion ouverte (paramètre de sortie).
+@param dwSrvcVersionsRequired Version requise spécifique au service (lecteur de carte) du fournisseur.
+       0x00112233 signifie la plage de versions [0.11; 22.33].
+@param lpSrvcVersion Informations sur la connexion ouverte, spécifiques au type de fournisseur (lecteur de carte)
+       (paramètre de sortie).
+@return Toujours `WFS_SUCCESS`.
 */
 HRESULT SPI_API WFPOpen(HSERVICE hService, LPSTR lpszLogicalName, 
                         HAPP hApp, LPSTR lpszAppID, 
@@ -83,23 +82,23 @@ HRESULT SPI_API WFPOpen(HSERVICE hService, LPSTR lpszLogicalName,
                         DWORD dwSPIVersionsRequired, LPWFSVERSION lpSPIVersion, 
                         DWORD dwSrvcVersionsRequired, LPWFSVERSION lpSrvcVersion
 ) {
-    // Возвращаем поддерживаемые версии.
+    // Retourne les versions supportées.
     if (lpSPIVersion != NULL) {
-        // Версия XFS менеджера, которая будет использоваться. Т.к. мы поддерживаем все версии,
-        // то просто максимальная запрошенная версия (она в старшем слове).
+        // Version du gestionnaire XFS qui sera utilisée. Comme nous supportons toutes les versions,
+        // il s'agit simplement de la version maximale demandée (elle se trouve dans le mot supérieur).
         lpSPIVersion->wVersion = HIWORD(dwSPIVersionsRequired);
-        // Минимальная и максимальная поддерживаемая нами версия
-        //TODO: Уточнить минимальную поддерживаемую версию!
+        // Version minimale et maximale que nous supportons
+        //TODO: Préciser la version minimale supportée !
         lpSPIVersion->wLowVersion  = MAKE_VERSION(0, 0);
         lpSPIVersion->wHighVersion = MAKE_VERSION(255, 255);
         safecopy(lpSPIVersion->szDescription, DLL_VERSION);
     }
     if (lpSrvcVersion != NULL) {
-        // Версия XFS менеджера, которая будет использоваться. Т.к. мы поддерживаем все версии,
-        // то просто максимальная запрошенная версия (она в старшем слове).
+        // Version du gestionnaire XFS qui sera utilisée. Comme nous supportons toutes les versions,
+        // il s'agit simplement de la version maximale demandée (elle se trouve dans le mot supérieur).
         lpSrvcVersion->wVersion = HIWORD(dwSrvcVersionsRequired);
-        // Минимальная и максимальная поддерживаемая нами версия
-        //TODO: Уточнить минимальную поддерживаемую версию!
+        // Version minimale et maximale que nous supportons
+        //TODO: Préciser la version minimale supportée !
         lpSrvcVersion->wLowVersion  = MAKE_VERSION(0, 0);
         lpSrvcVersion->wHighVersion = MAKE_VERSION(255, 255);
         safecopy(lpSrvcVersion->szDescription, DLL_VERSION);
@@ -108,37 +107,37 @@ HRESULT SPI_API WFPOpen(HSERVICE hService, LPSTR lpszLogicalName,
     pcsc.create(hService, Settings(lpszLogicalName, dwTraceLevel));
     XFS::Result(ReqID, hService, WFS_SUCCESS).send(hWnd, WFS_OPEN_COMPLETE);
 
-    // Возможные коды завершения асинхронного запроса (могут возвращаться и другие)
-    // WFS_ERR_CANCELED                The request was canceled by WFSCancelAsyncRequest.
-    // WFS_ERR_INTERNAL_ERROR          An internal inconsistency or other unexpected error occurred in the XFS subsystem.
-    // WFS_ERR_TIMEOUT                 The timeout interval expired.
-    // WFS_ERR_VERSION_ERROR_IN_SRVC   Within the service, a version mismatch of two modules occurred.
+    // Codes de fin possibles pour une requête asynchrone (d'autres peuvent également être retournés)
+    // WFS_ERR_CANCELED                La requête a été annulée par WFSCancelAsyncRequest.
+    // WFS_ERR_INTERNAL_ERROR          Une incohérence interne ou une autre erreur inattendue s'est produite dans le sous-système XFS.
+    // WFS_ERR_TIMEOUT                 L'intervalle de délai d'attente a expiré.
+    // WFS_ERR_VERSION_ERROR_IN_SRVC   Dans le service, une incompatibilité de version de deux modules s'est produite.
 
-    // Возможные коды завершения функции:
-    // WFS_ERR_CONNECTION_LOST       The connection to the service is lost.
-    // WFS_ERR_INTERNAL_ERROR        An internal inconsistency or other unexpected error occurred in the XFS subsystem.
-    // WFS_ERR_INVALID_HSERVICE      The hService parameter is not a valid service handle.
-    // WFS_ERR_INVALID_HWND          The hWnd parameter is not a valid window handle.
-    // WFS_ERR_INVALID_POINTER       A pointer parameter does not point to accessible memory.
-    // WFS_ERR_INVALID_TRACELEVEL    The dwTraceLevel parameter does not correspond to a valid trace level or set of levels.
-    // WFS_ERR_SPI_VER_TOO_HIGH      The range of versions of XFS SPI support requested by the XFS Manager is higher than any supported by this particular service provider.
-    // WFS_ERR_SPI_VER_TOO_LOW       The range of versions of XFS SPI support requested by the XFS Manager is lower than any supported by this particular service provider.
-    // WFS_ERR_SRVC_VER_TOO_HIGH     The range of versions of the service-specific interface support requested by the application is higher than any supported by the service provider for the logical service being opened.
-    // WFS_ERR_SRVC_VER_TOO_LOW      The range of versions of the service-specific interface support requested by the application is lower than any supported by the service provider for the logical service being opened.
-    // WFS_ERR_VERSION_ERROR_IN_SRVC Within the service, a version mismatch of two modules occurred.
+    // Codes de fin possibles pour la fonction :
+    // WFS_ERR_CONNECTION_LOST       La connexion au service est perdue.
+    // WFS_ERR_INTERNAL_ERROR        Une incohérence interne ou une autre erreur inattendue s'est produite dans le sous-système XFS.
+    // WFS_ERR_INVALID_HSERVICE      Le paramètre hService n'est pas un handle de service valide.
+    // WFS_ERR_INVALID_HWND          Le paramètre hWnd n'est pas un handle de fenêtre valide.
+    // WFS_ERR_INVALID_POINTER       Un paramètre pointeur ne pointe pas vers une mémoire accessible.
+    // WFS_ERR_INVALID_TRACELEVEL    Le paramètre dwTraceLevel ne correspond pas à un niveau de trace valide ou à un ensemble de niveaux.
+    // WFS_ERR_SPI_VER_TOO_HIGH      La plage de versions du support SPI XFS demandée par le gestionnaire XFS est supérieure à celle supportée par ce fournisseur de services particulier.
+    // WFS_ERR_SPI_VER_TOO_LOW       La plage de versions du support SPI XFS demandée par le gestionnaire XFS est inférieure à celle supportée par ce fournisseur de services particulier.
+    // WFS_ERR_SRVC_VER_TOO_HIGH     La plage de versions du support d'interface spécifique au service demandée par l'application est supérieure à celle supportée par le fournisseur de services pour le service logique en cours d'ouverture.
+    // WFS_ERR_SRVC_VER_TOO_LOW      La plage de versions du support d'interface spécifique au service demandée par l'application est inférieure à celle supportée par le fournisseur de services pour le service logique en cours d'ouverture.
+    // WFS_ERR_VERSION_ERROR_IN_SRVC Dans le service, une incompatibilité de version de deux modules s'est produite.
 
     return WFS_SUCCESS;
 }
-/** Завершает сессию (серию запросов к сервису, инициированную вызовом SPI функции WFPOpen)
-    между XFS менеджером и указанным сервис-провайдером.
+/** Termine une session (série de requêtes vers un service, initiée par l'appel à la fonction SPI WFPOpen)
+    entre le gestionnaire XFS et le fournisseur de services spécifié.
 @par
-    Если провайдер заблокирован вызовом WFPLock, он автоматически будет разблокирован и отписан от
-    всех событий (если это не сделали ранее вызовом WFPDeregister).
+    Si le fournisseur est bloqué par un appel à WFPLock, il sera automatiquement débloqué et désinscrit de
+    tous les événements (si cela n'a pas été fait précédemment par un appel à WFPDeregister).
 @message WFS_CLOSE_COMPLETE
 
-@param hService Закрываемый сервис-провайдер.
-@param hWnd Окно, которое должно получить сообщение о завершении асинхронной операции.
-@param ReqId Идентификатора запроса, который нужно передать окну `hWnd` при завершении операции.
+@param hService Fournisseur de services en cours de fermeture.
+@param hWnd Fenêtre qui doit recevoir le message de fin de l'opération asynchrone.
+@param ReqId Identifiant de la requête qui doit être passé à la fenêtre `hWnd` à la fin de l'opération.
 */
 HRESULT SPI_API WFPClose(HSERVICE hService, HWND hWnd, REQUESTID ReqID) {
     if (!pcsc.isValid(hService))
@@ -146,93 +145,94 @@ HRESULT SPI_API WFPClose(HSERVICE hService, HWND hWnd, REQUESTID ReqID) {
     pcsc.remove(hService);
     XFS::Result(ReqID, hService, WFS_SUCCESS).send(hWnd, WFS_CLOSE_COMPLETE);
 
-    // Возможные коды завершения асинхронного запроса (могут возвращаться и другие)
-    // WFS_ERR_CANCELED The request was canceled by WFSCancelAsyncRequest.
-    // WFS_ERR_INTERNAL_ERROR An internal inconsistency or other unexpected error occurred in the XFS subsystem.
+    // Codes de fin possibles pour une requête asynchrone (d'autres peuvent également être retournés)
+    // WFS_ERR_CANCELED La requête a été annulée par WFSCancelAsyncRequest.
+    // WFS_ERR_INTERNAL_ERROR Une incohérence interne ou une autre erreur inattendue s'est produite dans le sous-système XFS.
 
-    // Возможные коды завершения функции:
-    // WFS_ERR_CONNECTION_LOST The connection to the service is lost.
-    // WFS_ERR_INTERNAL_ERROR An internal inconsistency or other unexpected error occurred in the XFS subsystem.
-    // WFS_ERR_INVALID_HSERVICE The hService parameter is not a valid service handle.
-    // WFS_ERR_INVALID_HWND The hWnd parameter is not a valid window handle.
+    // Codes de fin possibles pour la fonction :
+    // WFS_ERR_CONNECTION_LOST La connexion au service est perdue.
+    // WFS_ERR_INTERNAL_ERROR Une incohérence interne ou une autre erreur inattendue s'est produite dans le sous-système XFS.
+    // WFS_ERR_INVALID_HSERVICE Le paramètre hService n'est pas un handle de service valide.
+    // WFS_ERR_INVALID_HWND Le paramètre hWnd n'est pas un handle de fenêtre valide.
     return WFS_SUCCESS;
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/** Подписывает указанное окно на события указанных классов от указанного сервис-провайдера.
+/** Abonne la fenêtre spécifiée aux événements des classes spécifiées par le fournisseur de services spécifié.
 
 @message WFS_REGISTER_COMPLETE
 
-@param hService Сервис, чьи сообщения требуется мониторить.
-@param dwEventClass Логический OR классов сообщений, которые нужно мониторить. 0 означает, что
-       производится подписка на все классы событий.
-@param hWndReg Окно, которое будет получать события указанных классов.
-@param hWnd Окно, которое должно получить сообщение о завершении асинхронной операции.
-@param ReqID Идентификатора запроса, который нужно передать окну `hWnd` при завершении операции.
+@param hService Service dont les messages doivent être surveillés.
+@param dwEventClass OR logique des classes de messages à surveiller. 0 signifie que
+       l'abonnement se fait pour toutes les classes d'événements.
+@param hWndReg Fenêtre qui recevra les événements des classes spécifiées.
+@param hWnd Fenêtre qui doit recevoir le message de fin de l'opération asynchrone.
+@param ReqID Identifiant de la requête qui doit être passé à la fenêtre `hWnd` à la fin de l'opération.
 */
 HRESULT SPI_API WFPRegister(HSERVICE hService,  DWORD dwEventClass, HWND hWndReg, HWND hWnd, REQUESTID ReqID) {
-    // Регистрируем событие для окна.
+    // Enregistre l'événement pour la fenêtre.
     if (!pcsc.addSubscriber(hService, hWndReg, dwEventClass)) {
-        // Если сервиса нет в PC/SC, то он потерян.
+        // Si le service n'est pas dans PC/SC, il est perdu.
         return WFS_ERR_INVALID_HSERVICE;
     }
-    // Добавление подписчика всегда успешно.
+    // L'ajout de l'abonné est toujours réussi.
     XFS::Result(ReqID, hService, WFS_SUCCESS).send(hWnd, WFS_REGISTER_COMPLETE);
-    // Возможные коды завершения асинхронного запроса (могут возвращаться и другие)
-    // WFS_ERR_CANCELED        The request was canceled by WFSCancelAsyncRequest.
-    // WFS_ERR_INTERNAL_ERROR  An internal inconsistency or other unexpected error occurred in the XFS subsystem.
+    // Codes de fin possibles pour une requête asynchrone (d'autres peuvent également être retournés)
+    // WFS_ERR_CANCELED        La requête a été annulée par WFSCancelAsyncRequest.
+    // WFS_ERR_INTERNAL_ERROR  Une incohérence interne ou une autre erreur inattendue s'est produite dans le sous-système XFS.
 
-    // Возможные коды завершения функции:
-    // WFS_ERR_CONNECTION_LOST     The connection to the service is lost.
-    // WFS_ERR_INTERNAL_ERROR      An internal inconsistency or other unexpected error occurred in the XFS subsystem.
-    // WFS_ERR_INVALID_EVENT_CLASS The dwEventClass parameter specifies one or more event classes not supported by the service.
-    // WFS_ERR_INVALID_HSERVICE    The hService parameter is not a valid service handle.
-    // WFS_ERR_INVALID_HWND        The hWnd parameter is not a valid window handle.
-    // WFS_ERR_INVALID_HWNDREG     The hWndReg parameter is not a valid window handle.
+    // Codes de fin possibles pour la fonction :
+    // WFS_ERR_CONNECTION_LOST     La connexion au service est perdue.
+    // WFS_ERR_INTERNAL_ERROR      Une incohérence interne ou une autre erreur inattendue s'est produite dans le sous-système XFS.
+    // WFS_ERR_INVALID_EVENT_CLASS Le paramètre dwEventClass spécifie une ou plusieurs classes d'événements non supportées par le service.
+    // WFS_ERR_INVALID_HSERVICE    Le paramètre hService n'est pas un handle de service valide.
+    // WFS_ERR_INVALID_HWND        Le paramètre hWnd n'est pas un handle de fenêtre valide.
+    // WFS_ERR_INVALID_HWNDREG     Le paramètre hWndReg n'est pas un handle de fenêtre valide.
+    // WFS_ERR_NOT_REGISTERED      La fenêtre hWndReg spécifiée n'était pas enregistrée pour recevoir des messages pour aucune classe d'événements.
     return WFS_SUCCESS;
 }
-/** Прерывает мониторинг указанных классов сообщений от указанного сервис-провайдера для указанных окон.
+/** Interrompt la surveillance des classes de messages spécifiées par le fournisseur de services spécifié pour les fenêtres spécifiées.
 
 @message WFS_DEREGISTER_COMPLETE
 
-@param hService Сервис, чьи сообщения больше не требуется мониторить.
-@param dwEventClass Логический OR классов сообщений, которые не нужно мониторить. 0 означает, что отписка
-       производится от всех классов событий.
-@param hWndReg Окно, которое больше не должно получать указанные сообщения. NULL означает, что отписка
-       производится для всех окон.
-@param hWnd Окно, которое должно получить сообщение о завершении асинхронной операции.
-@param ReqID Идентификатора запроса, который нужно передать окну `hWnd` при завершении операции.
+@param hService Service dont les messages ne doivent plus être surveillés.
+@param dwEventClass OR logique des classes de messages qui ne doivent plus être surveillées. 0 signifie que la désinscription
+       se fait pour toutes les classes d'événements.
+@param hWndReg Fenêtre qui ne doit plus recevoir les messages spécifiés. NULL signifie que la désinscription
+       se fait pour toutes les fenêtres.
+@param hWnd Fenêtre qui doit recevoir le message de fin de l'opération asynchrone.
+@param ReqID Identifiant de la requête qui doit être passé à la fenêtre `hWnd` à la fin de l'opération.
 */
 HRESULT SPI_API WFPDeregister(HSERVICE hService, DWORD dwEventClass, HWND hWndReg, HWND hWnd, REQUESTID ReqID) {
-    // Отписываемся от событий. Если никого не было удалено, то никто не был зарегистрирован.
+    // Se désabonne des événements. Si personne n'a été supprimé, personne n'était enregistré.
     if (!pcsc.removeSubscriber(hService, hWndReg, dwEventClass)) {
-        // Если сервиса нет в PC/SC, то он потерян.
+        // Si le service n'est pas dans PC/SC, il est perdu.
         return WFS_ERR_INVALID_HSERVICE;
     }
-    // Удаление подписчика всегда успешно.
+    // La suppression de l'abonné est toujours réussie.
     XFS::Result(ReqID, hService, WFS_SUCCESS).send(hWnd, WFS_DEREGISTER_COMPLETE);
-    // Возможные коды завершения асинхронного запроса (могут возвращаться и другие)
-    // WFS_ERR_CANCELED The request was canceled by WFSCancelAsyncRequest.
+    // Codes de fin possibles pour une requête asynchrone (d'autres peuvent également être retournés)
+    // WFS_ERR_CANCELED La requête a été annulée par WFSCancelAsyncRequest.
 
-    // Возможные коды завершения функции:
-    // WFS_ERR_CONNECTION_LOST     The connection to the service is lost.
-    // WFS_ERR_INTERNAL_ERROR      An internal inconsistency or other unexpected error occurred in the XFS subsystem.
-    // WFS_ERR_INVALID_EVENT_CLASS The dwEventClass parameter specifies one or more event classes not supported by the service.
-    // WFS_ERR_INVALID_HSERVICE    The hService parameter is not a valid service handle.
-    // WFS_ERR_INVALID_HWND        The hWnd parameter is not a valid window handle.
-    // WFS_ERR_INVALID_HWNDREG     The hWndReg parameter is not a valid window handle.
-    // WFS_ERR_NOT_REGISTERED      The specified hWndReg window was not registered to receive messages for any event classes.
+    // Codes de fin possibles pour la fonction :
+    // WFS_ERR_CONNECTION_LOST     La connexion au service est perdue.
+    // WFS_ERR_INTERNAL_ERROR      Une incohérence interne ou une autre erreur inattendue s'est produite dans le sous-système XFS.
+    // WFS_ERR_INVALID_EVENT_CLASS Le paramètre dwEventClass spécifie une ou plusieurs classes d'événements non supportées par le service.
+    // WFS_ERR_INVALID_HSERVICE    Le paramètre hService n'est pas un handle de service valide.
+    // WFS_ERR_INVALID_HWND        Le paramètre hWnd n'est pas un handle de fenêtre valide.
+    // WFS_ERR_INVALID_HWNDREG     Le paramètre hWndReg n'est pas un handle de fenêtre valide.
+    // WFS_ERR_NOT_REGISTERED      La fenêtre hWndReg spécifiée n'était pas enregistrée pour recevoir des messages pour aucune classe d'événements.
     return WFS_SUCCESS;
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/** Получает эксклюзивный доступ к устройству.
+/** Obtient un accès exclusif au périphérique.
 
 @message WFS_LOCK_COMPLETE
 
-@param hService Сервис, к которому нужно получить эксклюзивный доступ.
-@param dwTimeOut Таймаут (в мс), в течении которого необходимо получить доступ. `WFS_INDEFINITE_WAIT`,
-       если таймаут не требуется.
-@param hWnd Окно, которое должно получить сообщение о завершении асинхронной операции.
-@param ReqID Идентификатора запроса, который нужно передать окну `hWnd` при завершении операции.
+@param hService Service auquel il faut obtenir un accès exclusif.
+@param dwTimeOut Délai d'attente (en ms) pendant lequel l'accès doit être obtenu. `WFS_INDEFINITE_WAIT`,
+       si aucun délai n'est requis.
+@param hWnd Fenêtre qui doit recevoir le message de fin de l'opération asynchrone.
+@param ReqID Identifiant de la requête qui doit être passé à la fenêtre `hWnd` à la fin de l'opération.
 */
 HRESULT SPI_API WFPLock(HSERVICE hService, DWORD dwTimeOut, HWND hWnd, REQUESTID ReqID) {
     if (!pcsc.isValid(hService))
@@ -241,15 +241,15 @@ HRESULT SPI_API WFPLock(HSERVICE hService, DWORD dwTimeOut, HWND hWnd, REQUESTID
     PCSC::Status st = pcsc.get(hService).lock();
     XFS::Result(ReqID, hService, st).send(hWnd, WFS_LOCK_COMPLETE);
 
-    // Возможные коды завершения асинхронного запроса (могут возвращаться и другие)
-    // WFS_ERR_CANCELED        The request was canceled by WFSCancelAsyncRequest.
-    // WFS_ERR_DEV_NOT_READY   The function required device access, and the device was not ready or timed out.
-    // WFS_ERR_HARDWARE_ERROR  The function required device access, and an error occurred on the device.
-    // WFS_ERR_INTERNAL_ERROR  An internal inconsistency or other unexpected error occurred in the XFS subsystem.
-    // WFS_ERR_SOFTWARE_ERROR  The function required access to configuration information, and an error occurred on the software.
-    // WFS_ERR_TIMEOUT         The timeout interval expired.
+    // Codes de fin possibles pour une requête asynchrone (d'autres peuvent également être retournés)
+    // WFS_ERR_CANCELED        La requête a été annulée par WFSCancelAsyncRequest.
+    // WFS_ERR_DEV_NOT_READY   La fonction a requis l'accès au périphérique, et le périphérique n'était pas prêt ou a expiré.
+    // WFS_ERR_HARDWARE_ERROR  La fonction a requis l'accès au périphérique, et une erreur s'est produite sur le périphérique.
+    // WFS_ERR_INTERNAL_ERROR  Une incohérence interne ou une autre erreur inattendue s'est produite dans le sous-système XFS.
+    // WFS_ERR_SOFTWARE_ERROR  La fonction a requis l'accès aux informations de configuration, et une erreur s'est produite sur le logiciel.
+    // WFS_ERR_TIMEOUT         L'intervalle de délai d'attente a expiré.
 
-    // Возможные коды завершения функции:
+    // Codes de fin possibles pour la fonction :
     // WFS_ERR_CONNECTION_LOST    The connection to the service is lost.
     // WFS_ERR_INTERNAL_ERROR     An internal inconsistency or other unexpected error occurred in the XFS subsystem.
     // WFS_ERR_INVALID_HSERVICE   The hService parameter is not a valid service handle.
@@ -259,9 +259,9 @@ HRESULT SPI_API WFPLock(HSERVICE hService, DWORD dwTimeOut, HWND hWnd, REQUESTID
 /**
 @message WFS_UNLOCK_COMPLETE
 
-@param hService Сервис, к которому больше ну нужно иметь эксклюзивный доступ.
-@param hWnd Окно, которое должно получить сообщение о завершении асинхронной операции.
-@param ReqID Идентификатора запроса, который нужно передать окну `hWnd` при завершении операции.
+@param hService Service auquel il faut supprimer l'accès exclusif.
+@param hWnd Fenêtre qui doit recevoir le message de fin de l'opération asynchrone.
+@param ReqID Identifiant de la requête qui doit être passé à la fenêtre `hWnd` à la fin de l'opération.
 */
 HRESULT SPI_API WFPUnlock(HSERVICE hService, HWND hWnd, REQUESTID ReqID) {
     if (!pcsc.isValid(hService))
@@ -269,12 +269,12 @@ HRESULT SPI_API WFPUnlock(HSERVICE hService, HWND hWnd, REQUESTID ReqID) {
 
     PCSC::Status st = pcsc.get(hService).unlock();
     XFS::Result(ReqID, hService, st).send(hWnd, WFS_UNLOCK_COMPLETE);
-    // Возможные коды завершения асинхронного запроса (могут возвращаться и другие)
-    // WFS_ERR_CANCELED        The request was canceled by WFSCancelAsyncRequest.
-    // WFS_ERR_INTERNAL_ERROR  An internal inconsistency or other unexpected error occurred in the XFS subsystem.
-    // WFS_ERR_NOT_LOCKED      The service to be unlocked is not locked under the calling hService.
+    // Codes de fin possibles pour une requête asynchrone (d'autres peuvent également être retournés)
+    // WFS_ERR_CANCELED        La requête a été annulée par WFSCancelAsyncRequest.
+    // WFS_ERR_INTERNAL_ERROR  Une incohérence interne ou une autre erreur inattendue s'est produite dans le sous-système XFS.
+    // WFS_ERR_NOT_LOCKED      Le service à déverrouiller n'est pas verrouillé sous le hService appelant.
 
-    // Возможные коды завершения функции:
+    // Codes de fin possibles pour la fonction :
     // WFS_ERR_CONNECTION_LOST    The connection to the service is lost.
     // WFS_ERR_INTERNAL_ERROR     An internal inconsistency or other unexpected error occurred in the XFS subsystem.
     // WFS_ERR_INVALID_HSERVICE   The hService parameter is not a valid service handle.
@@ -284,89 +284,89 @@ HRESULT SPI_API WFPUnlock(HSERVICE hService, HWND hWnd, REQUESTID ReqID) {
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-/** Получает различную информацию о сервис-провайдере.
+/** Obtient diverses informations sur le fournisseur de services.
 
 @message WFS_GETINFO_COMPLETE
 
-@param hService Хендл сервис-провайдера, о котором получается информация.
-@param dwCategory Вид запрашиваемой информации. Поддерживаются только стандартные виды информации.
-@param pQueryDetails Указатель на дополнительные данные для запроса или `NULL`, если их нет.
-@param dwTimeOut Таймаут, за который нужно завершить операцию.
-@param hWnd Окно, которое должно получить сообщение о завершении асинхронной операции.
-@param ReqID Идентификатора запроса, который нужно передать окну `hWnd` при завершении операции.
+@param hService Handle du fournisseur de services dont on veut obtenir des informations.
+@param dwCategory Type d'informations demandées. Seules les types d'informations standard sont supportés.
+@param pQueryDetails Pointeur vers des données supplémentaires pour la requête ou `NULL`, si elles n'existent pas.
+@param dwTimeOut Délai avant de terminer l'opération.
+@param hWnd Fenêtre qui doit recevoir le message de fin de l'opération asynchrone.
+@param ReqID Identifiant de la requête qui doit être passé à la fenêtre `hWnd` à la fin de l'opération.
 */
 HRESULT SPI_API WFPGetInfo(HSERVICE hService, DWORD dwCategory, LPVOID lpQueryDetails, DWORD dwTimeOut, HWND hWnd, REQUESTID ReqID) {
     if (!pcsc.isValid(hService))
         return WFS_ERR_INVALID_HSERVICE;
-    // Для IDC могут запрашиваться только эти константы (WFS_INF_IDC_*)
+    // Pour IDC, seules ces constantes peuvent être demandées (WFS_INF_IDC_*)
     switch (dwCategory) {
-        case WFS_INF_IDC_STATUS: {      // Дополнительных параметров нет
+        case WFS_INF_IDC_STATUS: {      // Pas de paramètres supplémentaires
             std::pair<WFSIDCSTATUS*, PCSC::Status> status = pcsc.get(hService).getStatus();
-            // Получение информации о считывателе всегда успешно.
+            // Obtention d'informations sur le lecteur est toujours réussie.
             XFS::Result(ReqID, hService, WFS_SUCCESS).attach(status.first).send(hWnd, WFS_GETINFO_COMPLETE);
             break;
         }
-        case WFS_INF_IDC_CAPABILITIES: {// Дополнительных параметров нет
+        case WFS_INF_IDC_CAPABILITIES: {// Pas de paramètres supplémentaires
             std::pair<WFSIDCCAPS*, PCSC::Status> caps = pcsc.get(hService).getCaps();
             XFS::Result(ReqID, hService, caps.second).attach(caps.first).send(hWnd, WFS_GETINFO_COMPLETE);
             break;
         }
         case WFS_INF_IDC_FORM_LIST:
         case WFS_INF_IDC_QUERY_FORM: {
-            // Формы не поддерживаем. Форма определяет, в каких местах на треках находятся данные.
-            // Так как треки мы не читаем и не пишем, то формы не поддерживаем.
+            // Les formes ne sont pas supportées. La forme détermine où les données se trouvent sur les pistes.
+            // Comme nous ne lisons ni n'écrivons pas les pistes, les formes ne sont pas supportées.
             return WFS_ERR_UNSUPP_COMMAND;
         }
         default:
             return WFS_ERR_INVALID_CATEGORY;
     }
-    // Возможные коды завершения асинхронного запроса (могут возвращаться и другие)
-    // WFS_ERR_CANCELED        The request was canceled by WFSCancelAsyncRequest.
-    // WFS_ERR_DEV_NOT_READY   The function required device access, and the device was not ready or timed out.
-    // WFS_ERR_HARDWARE_ERROR  The function required device access, and an error occurred on the device.
-    // WFS_ERR_INTERNAL_ERROR  An internal inconsistency or other unexpected error occurred in the XFS subsystem.
-    // WFS_ERR_INVALID_DATA    The data structure passed as input parameter contains invalid data..
-    // WFS_ERR_SOFTWARE_ERROR  The function required access to configuration information, and an error occurred on the software.
-    // WFS_ERR_TIMEOUT         The timeout interval expired.
-    // WFS_ERR_USER_ERROR      A user is preventing proper operation of the device.
-    // WFS_ERR_UNSUPP_DATA     The data structure passed as an input parameter although valid for this service class, is not supported by this service provider or device.
+    // Codes de fin possibles pour une requête asynchrone (d'autres peuvent également être retournés)
+    // WFS_ERR_CANCELED        La requête a été annulée par WFSCancelAsyncRequest.
+    // WFS_ERR_DEV_NOT_READY   La fonction a requis l'accès au périphérique, et le périphérique n'était pas prêt ou a expiré.
+    // WFS_ERR_HARDWARE_ERROR  La fonction a requis l'accès au périphérique, et une erreur s'est produite sur le périphérique.
+    // WFS_ERR_INTERNAL_ERROR  Une incohérence interne ou une autre erreur inattendue s'est produite dans le sous-système XFS.
+    // WFS_ERR_INVALID_DATA    La structure de données passée en paramètre d'entrée contient des données non valides..
+    // WFS_ERR_SOFTWARE_ERROR  La fonction a requis l'accès aux informations de configuration, et une erreur s'est produite sur le logiciel.
+    // WFS_ERR_TIMEOUT         L'intervalle de délai d'attente a expiré.
+    // WFS_ERR_USER_ERROR      Un utilisateur empêche le bon fonctionnement de l'appareil.
+    // WFS_ERR_UNSUPP_DATA     La structure de données passée en paramètre d'entrée, bien que valide pour cette classe de service, n'est pas supportée par ce fournisseur de services ou l'appareil.
 
-    // Возможные коды завершения функции:
+    // Codes de fin possibles pour la fonction :
     // WFS_ERR_CONNECTION_LOST    The connection to the service is lost.
     // WFS_ERR_INTERNAL_ERROR     An internal inconsistency or other unexpected error occurred in the XFS subsystem.
-    // WFS_ERR_INVALID_CATEGORY   The dwCategory issued is not supported by this service class.
-    // WFS_ERR_INVALID_HSERVICE   The hService parameter is not a valid service handle.
-    // WFS_ERR_INVALID_HWND       The hWnd parameter is not a valid window handle.
-    // WFS_ERR_INVALID_POINTER    A pointer parameter does not point to accessible memory.
-    // WFS_ERR_UNSUPP_CATEGORY    The dwCategory issued, although valid for this service class, is not supported by this service provider.
+    // WFS_ERR_INVALID_CATEGORY   Le dwCategory émis n'est pas supporté par cette classe de service.
+    // WFS_ERR_INVALID_HSERVICE   Le paramètre hService n'est pas un handle de service valide.
+    // WFS_ERR_INVALID_HWND       Le paramètre hWnd n'est pas un handle de fenêtre valide.
+    // WFS_ERR_INVALID_POINTER    Un paramètre pointeur ne pointe pas vers une mémoire accessible.
+    // WFS_ERR_UNSUPP_CATEGORY    Le dwCategory émis, bien que valide pour cette classe de service, n'est pas supporté par ce fournisseur de services.
 
     return WFS_SUCCESS;
 }
-/** Посылает команду для выполнения карточным ридером.
+/** Envoie une commande pour exécuter le lecteur de carte.
 
 @message WFS_EXECUTE_COMPLETE
-@message WFS_EXEE_IDC_MEDIAINSERTED Генерируется, когда в устройстве появляется карточка.
-@message WFS_SRVE_IDC_MEDIAREMOVED Генерируется, когда из устройства вынимается карточка.
+@message WFS_EXEE_IDC_MEDIAINSERTED Généré lorsqu'une carte apparaît dans l'appareil.
+@message WFS_SRVE_IDC_MEDIAREMOVED Généré lorsqu'une carte est retirée de l'appareil.
 @message WFS_EXEE_IDC_INVALIDMEDIA
 @message WFS_SRVE_IDC_MEDIADETECTED
-@message WFS_EXEE_IDC_INVALIDTRACKDATA Никогда не генерируется.
-@message WFS_USRE_IDC_RETAINBINTHRESHOLD Никогда не генерируется.
+@message WFS_EXEE_IDC_INVALIDTRACKDATA N'est jamais généré.
+@message WFS_USRE_IDC_RETAINBINTHRESHOLD N'est jamais généré.
 
-@param hService Хендл сервис-провайдера, который должен выполнить команду.
-@param dwCommand Вид выполняемой команды.
-@param lpCmdData Даные для команды. Зависят от вида.
-@param dwTimeOut Количество миллисекунд, за которое команда должна выполниться, или `WFS_INDEFINITE_WAIT`,
-       если таймаут не требуется.
-@param hWnd Окно, которое должно получить сообщение о завершении асинхронной операции.
-@param ReqID Идентификатора запроса, который нужно передать окну `hWnd` при завершении операции.
+@param hService Handle du fournisseur de services qui doit exécuter la commande.
+@param dwCommand Type de commande à exécuter.
+@param lpCmdData Données pour la commande. Dépendent du type.
+@param dwTimeOut Nombre de millisecondes pendant lesquelles la commande doit être exécutée, ou `WFS_INDEFINITE_WAIT`,
+       si aucun délai n'est requis.
+@param hWnd Fenêtre qui doit recevoir le message de fin de l'opération asynchrone.
+@param ReqID Identifiant de la requête qui doit être passé à la fenêtre `hWnd` à la fin de l'opération.
 */
 HRESULT SPI_API WFPExecute(HSERVICE hService, DWORD dwCommand, LPVOID lpCmdData, DWORD dwTimeOut, HWND hWnd, REQUESTID ReqID) {
     if (!pcsc.isValid(hService))
         return WFS_ERR_INVALID_HSERVICE;
 
     switch (dwCommand) {
-        // Ожидание вставки карты с указанным таймаутом, немедленное чтение треков согласно форме,
-        // переданой в параметре. Так как мы не умеем читать треки, то команда не поддерживается.
+        // Attente d'insertion d'une carte avec délai spécifié, lecture immédiate des pistes selon la forme,
+        // transmise en paramètre. Comme nous ne savons pas lire les pistes, cette commande n'est pas supportée.
         case WFS_CMD_IDC_READ_TRACK: {
             if (lpCmdData == NULL) {
                 return WFS_ERR_INVALID_POINTER;
@@ -374,47 +374,47 @@ HRESULT SPI_API WFPExecute(HSERVICE hService, DWORD dwCommand, LPVOID lpCmdData,
             LPSTR formName = (LPSTR)lpCmdData;
             return WFS_ERR_UNSUPP_COMMAND;
         }
-        // Аналогично чтению треков.
+        // Identique à la lecture des pistes.
         case WFS_CMD_IDC_WRITE_TRACK: {
             //WFSIDCWRITETRACK* input = (WFSIDCWRITETRACK*)lpCmdData;
             return WFS_ERR_UNSUPP_COMMAND;
         }
-        // Команда говорит считывателю вернуть карту. Так как наш считыватель не умеет сам что-либо
-        // делать с картой, эту команду мы не поддерживаем.
-        case WFS_CMD_IDC_EJECT_CARD: {// Входных параметров нет.
-            // Kalignite пытается извлечь карту, невзирая на то, что мы сообщает, что эта возможность
-            // не поддерживается, и падает с Fatal Error, если сообщить ему, что он требует невозможного,
-            // хотя по спецификации мы обязаны сообщать о том, что данная возможность не поддерживается
-            // кодом ответа WFS_ERR_UNSUPP_COMMAND и имеем право не поддерживать эту возможность.
+        // La commande demande au lecteur de retourner la carte. Comme notre lecteur ne peut rien faire
+        // avec la carte, nous ne la supportons pas.
+        case WFS_CMD_IDC_EJECT_CARD: {// Pas de paramètres d'entrée.
+            // Kalignite essaie d'extraire la carte, ignorant le fait que nous lui disons que cette fonctionnalité
+            // n'est pas supportée, et tombe en erreur fatale si nous lui disons qu'il demande quelque chose d'impossible,
+            // bien que, selon la spécification, nous devons lui dire que cette fonctionnalité n'est pas supportée
+            // par le code de réponse WFS_ERR_UNSUPP_COMMAND et nous avons le droit de ne pas la supporter.
             if (pcsc.get(hService).settings().workarounds.canEject) {
                 XFS::Result(ReqID, hService, WFS_SUCCESS).eject().send(hWnd, WFS_EXECUTE_COMPLETE);
                 return WFS_SUCCESS;
             }
             return WFS_ERR_UNSUPP_COMMAND;
         }
-        // Команда на захват карты считывателем. Аналогично предыдущей команде.
-        case WFS_CMD_IDC_RETAIN_CARD: {// Входных параметров нет.
+        // La commande capture la carte lue par le lecteur. Identique à la commande précédente.
+        case WFS_CMD_IDC_RETAIN_CARD: {// Pas de paramètres d'entrée.
             return WFS_ERR_UNSUPP_COMMAND;
         }
-        // Команда на сброс счетчика захваченных карт. Так как мы их не захватываем, то не поддерживаем.
-        case WFS_CMD_IDC_RESET_COUNT: {// Входных параметров нет.
+        // La commande réinitialise le compteur de cartes capturées. Comme nous ne les capturons pas, nous ne les supportons pas.
+        case WFS_CMD_IDC_RESET_COUNT: {// Pas de paramètres d'entrée.
             return WFS_ERR_UNSUPP_COMMAND;
         }
-        // Устанавливает DES-ключ, необходимый для работы модуля CIM86. Не поддерживаем,
-        // т.к. у нас нет такого модуля.
+        // Définit la clé DES nécessaire pour le fonctionnement du module CIM86. Nous ne la supportons pas,
+        // car nous n'avons pas de tel module.
         case WFS_CMD_IDC_SETKEY: {
             //WFSIDCSETKEY* = (WFSIDCSETKEY*)lpCmdData;
             return WFS_ERR_UNSUPP_COMMAND;
         }
-        // Подключаем чип, сбрасываем его и читаем ATR (Answer To Reset).
-        // Также данная команда может быть использована для "холодного" сброса чипа.
-        // Эта команда не должна использоваться для постоянно присоединенного чипа.
-        //TODO: Чип постоянно подсоединен или нет?
+        // Connecte le chip, le réinitialise et lit ATR (Answer To Reset).
+        // Cette commande peut également être utilisée pour un "reset froid" du chip.
+        // Cette commande ne doit pas être utilisée pour un chip permanentement connecté.
+        //TODO: Le chip est permanent ou non?
         case WFS_CMD_IDC_READ_RAW_DATA: {
             if (lpCmdData == NULL) {
                 return WFS_ERR_INVALID_POINTER;
             }
-            // Битовая маска с данными, которые должны быть прочитаны.
+            // Masque binaire avec les données qui doivent être lues.
             XFS::ReadFlags readData = *((WORD*)lpCmdData);
             if (readData.value() & WFS_IDC_CHIP) {
                 pcsc.get(hService).asyncRead(dwTimeOut, hWnd, ReqID, readData);
@@ -422,14 +422,14 @@ HRESULT SPI_API WFPExecute(HSERVICE hService, DWORD dwCommand, LPVOID lpCmdData,
             }
             return WFS_ERR_UNSUPP_COMMAND;
         }
-        // Ждет указанное время, пока не вставят карточку, а потом записывает данные на указанный трек.
-        // Не поддерживаем, т.к. не умеем писать треки.
+        // Attend le temps spécifié jusqu'à ce qu'une carte soit insérée, puis écrit les données sur la piste spécifiée.
+        // Nous ne la supportons pas, car nous ne savons pas écrire des pistes.
         case WFS_CMD_IDC_WRITE_RAW_DATA: {
-            //NULL-terminated массив
+            //NULL-terminated array
             //WFSIDCCARDDATA** data = (WFSIDCCARDDATA**)lpCmdData;
             return WFS_ERR_UNSUPP_COMMAND;
         }
-        // Посылает данные чипу и получает от него ответ. Данные прозрачны для провайдера.
+        // Envoie des données au chip et reçoit la réponse de celui-ci. Les données sont transparentes pour le fournisseur.
         case WFS_CMD_IDC_CHIP_IO: {
             if (lpCmdData == NULL) {
                 return WFS_ERR_INVALID_POINTER;
@@ -439,11 +439,11 @@ HRESULT SPI_API WFPExecute(HSERVICE hService, DWORD dwCommand, LPVOID lpCmdData,
             XFS::Result(ReqID, hService, result.second).attach(result.first).send(hWnd, WFS_EXECUTE_COMPLETE);
             return WFS_SUCCESS;
         }
-        // Отключает питание чипа.
+        // Déconnecte le chip.
         case WFS_CMD_IDC_RESET: {
-            // Битовая маска. NULL означает, что провайдер сам решает, что делать.
+            // Masque binaire. NULL signifie que le fournisseur décide ce que faire.
             WORD wResetIn = lpCmdData ? *((WORD*)lpCmdData) : WFS_IDC_NOACTION;
-            //TODO: Реализовать команду WFS_CMD_IDC_RESET
+            //TODO: Implémenter la commande WFS_CMD_IDC_RESET
             return WFS_ERR_UNSUPP_COMMAND;
         }
         case WFS_CMD_IDC_CHIP_POWER: {
@@ -455,30 +455,29 @@ HRESULT SPI_API WFPExecute(HSERVICE hService, DWORD dwCommand, LPVOID lpCmdData,
             XFS::Result(ReqID, hService, result.second).attach(result.first).send(hWnd, WFS_EXECUTE_COMPLETE);
             return WFS_SUCCESS;
         }
-        // Разбирает результат, ранее возвращенный командой WFS_CMD_IDC_READ_RAW_DATA. Так как мы ее
-        // не поддерживаем, то и эту команду мы не поддерживаем.
+        // Analyse le résultat, précédemment retourné par la commande WFS_CMD_IDC_READ_RAW_DATA. Comme nous ne la supportons pas, nous ne la supportons pas.
         case WFS_CMD_IDC_PARSE_DATA: {
             // WFSIDCPARSEDATA* parseData = (WFSIDCPARSEDATA*)lpCmdData;
             return WFS_ERR_UNSUPP_COMMAND;
         }
         default: {
-            // Все остальные команды недопустимы.
+            // Toutes les autres commandes sont invalides.
             return WFS_ERR_INVALID_COMMAND;
         }
     }// switch (dwCommand)
-    // Возможные коды завершения асинхронного запроса (могут возвращаться и другие)
-    // WFS_ERR_CANCELED        The request was canceled by WFSCancelAsyncRequest.
-    // WFS_ERR_DEV_NOT_READY   The function required device access, and the device was not ready or timed out.
-    // WFS_ERR_HARDWARE_ERROR  The function required device access, and an error occurred on the device.
-    // WFS_ERR_INVALID_DATA    The data structure passed as input parameter contains invalid data..
-    // WFS_ERR_INTERNAL_ERROR  An internal inconsistency or other unexpected error occurred in the XFS subsystem.
-    // WFS_ERR_LOCKED          The service is locked under a different hService.
-    // WFS_ERR_SOFTWARE_ERROR  The function required access to configuration information, and an error occurred on the software.
-    // WFS_ERR_TIMEOUT         The timeout interval expired.
-    // WFS_ERR_USER_ERROR      A user is preventing proper operation of the device.
-    // WFS_ERR_UNSUPP_DATA     The data structure passed as an input parameter although valid for this service class, is not supported by this service provider or device.
+    // Codes de fin possibles pour une requête asynchrone (d'autres peuvent également être retournés)
+    // WFS_ERR_CANCELED        La requête a été annulée par WFSCancelAsyncRequest.
+    // WFS_ERR_DEV_NOT_READY   La fonction a requis l'accès au périphérique, et le périphérique n'était pas prêt ou a expiré.
+    // WFS_ERR_HARDWARE_ERROR  La fonction a requis l'accès au périphérique, et une erreur s'est produite sur le périphérique.
+    // WFS_ERR_INVALID_DATA    La structure de données passée en paramètre d'entrée contient des données non valides..
+    // WFS_ERR_INTERNAL_ERROR  Une incohérence interne ou une autre erreur inattendue s'est produite dans le sous-système XFS.
+    // WFS_ERR_LOCKED          Le service est verrouillé sous un hService différent.
+    // WFS_ERR_SOFTWARE_ERROR  La fonction a requis l'accès aux informations de configuration, et une erreur s'est produite sur le logiciel.
+    // WFS_ERR_TIMEOUT         L'intervalle de délai d'attente a expiré.
+    // WFS_ERR_USER_ERROR      Un utilisateur empêche le bon fonctionnement de l'appareil.
+    // WFS_ERR_UNSUPP_DATA     La structure de données passée en paramètre d'entrée, bien que valide pour cette classe de service, n'est pas supportée par ce fournisseur de services ou l'appareil.
 
-    // Возможные коды завершения функции:
+    // Codes de fin possibles pour la fonction :
     // WFS_ERR_CONNECTION_LOST    The connection to the service is lost.
     // WFS_ERR_INTERNAL_ERROR     An internal inconsistency or other unexpected error occurred in the XFS subsystem.
     // WFS_ERR_INVALID_COMMAND    The dwCommand issued is not supported by this service class.
@@ -488,13 +487,13 @@ HRESULT SPI_API WFPExecute(HSERVICE hService, DWORD dwCommand, LPVOID lpCmdData,
     // WFS_ERR_UNSUPP_COMMAND     The dwCommand issued, although valid for this service class, is not supported by this service provider.
     return WFS_ERR_INTERNAL_ERROR;
 }
-/** Отменяет указанный (либо все) асинхронный запрос, выполняемый провайдером, прежде, чем он завершится.
-    Все запросы, котрые не успели выпонится к этому времени, завершатся с кодом `WFS_ERR_CANCELED`.
+/** Annule une requête asynchrone spécifiée (ou toutes pour un service spécifié) avant qu'elle ne se termine.
+    Toutes les requêtes qui n'ont pas pu être exécutées à ce moment seront terminées avec le code `WFS_ERR_CANCELED`.
 
-    Отмена запросов не поддерживается.
+    L'annulation des requêtes n'est pas supportée.
 @param hService
-@param ReqID Идентификатор запроса для отмены или `NULL`, если необходимо отменить все запросы
-       для указанного сервися `hService`.
+@param ReqID Identifiant de la requête à annuler ou `NULL`, si toutes les requêtes doivent être annulées
+       pour le service spécifié `hService`.
 */
 HRESULT SPI_API WFPCancelAsyncRequest(HSERVICE hService, REQUESTID ReqID) {
     if (!pcsc.isValid(hService))
@@ -502,7 +501,7 @@ HRESULT SPI_API WFPCancelAsyncRequest(HSERVICE hService, REQUESTID ReqID) {
     if (!pcsc.cancelTask(hService, ReqID)) {
         return WFS_ERR_INVALID_REQ_ID;
     }
-    // Возможные коды завершения функции:
+    // Codes de fin possibles pour la fonction :
     // WFS_ERR_CONNECTION_LOST  The connection to the service is lost.
     // WFS_ERR_INTERNAL_ERROR   An internal inconsistency or other unexpected error occurred in the XFS subsystem.
     // WFS_ERR_INVALID_HSERVICE The hService parameter is not a valid service handle.
@@ -513,7 +512,7 @@ HRESULT SPI_API WFPSetTraceLevel(HSERVICE hService, DWORD dwTraceLevel) {
     if (!pcsc.isValid(hService))
         return WFS_ERR_INVALID_HSERVICE;
     pcsc.get(hService).setTraceLevel(dwTraceLevel);
-    // Возможные коды завершения функции:
+    // Codes de fin possibles pour la fonction :
     // WFS_ERR_CONNECTION_LOST    The connection to the service is lost.
     // WFS_ERR_INTERNAL_ERROR     An internal inconsistency or other unexpected error occurred in the XFS subsystem.
     // WFS_ERR_INVALID_HSERVICE   The hService parameter is not a valid service handle.
@@ -522,9 +521,9 @@ HRESULT SPI_API WFPSetTraceLevel(HSERVICE hService, DWORD dwTraceLevel) {
     // WFS_ERR_OP_IN_PROGRESS     A blocking operation is in progress on the thread; only WFSCancelBlockingCall and WFSIsBlocking are permitted at this time.
     return WFS_SUCCESS;
 }
-/** Вызывается XFS для определения того, можно ли выгрузить DLL с данным сервис-провайдером прямо сейчас. */
+/** Appelé par XFS pour déterminer si DLL peut être déchargée avec ce fournisseur de services directement maintenant. */
 HRESULT SPI_API WFPUnloadService() {
-    // Возможные коды завершения функции:
+    // Codes de fin possibles pour la fonction :
     // WFS_ERR_NOT_OK_TO_UNLOAD
     //     The XFS Manager may not unload the service provider DLL at this time. It will repeat this
     //     request to the service provider until the return is WFS_SUCCESS, or until a new session is
