@@ -6,7 +6,7 @@
 #include "Utils/CTString.h"
 #include "Utils/Enum.h"
 
-// Для HRESULT и LONG
+// Pour HRESULT et LONG
 #include <windef.h>
 // CEN/XFS API -- pour les codes d'erreur
 #include <xfsapi.h>

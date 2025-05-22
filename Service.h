@@ -3,7 +3,7 @@
 
 #pragma once
 
-// CEN/XFS API -- Должно быть сверху, т.к., если поместить
+// CEN/XFS API -- Doit être en haut, car si placé ici,
 #include <xfsapi.h>
 
 #include "EventSupport.h"
@@ -16,10 +16,10 @@
 #include "XFS/ResetAction.h"
 
 #include <string>
-// Для std::pair
+// Pour std::pair
 #include <utility>
-// CEN/XFS API -- Должно быть сверху, т.к., если поместить здесь,
-// то начинаются странные ошибки компиляции из winnt.h как минимум в MSVC 2005.
+// CEN/XFS API -- Doit être en haut, car si placé ici,
+// des erreurs de compilation étranges commencent à apparaître depuis winnt.h au moins dans MSVC 2005.
 //#include <xfsapi.h>
 // PC/CS API
 #include <winscard.h>
@@ -27,30 +27,30 @@
 class Manager;
 class Service : public EventNotifier {
     Manager& pcsc;
-    /// Хендл XFS-сервиса, который представляет данный объект
+    /// Handle du service XFS que cet objet représente
     HSERVICE hService;
-    /// Хендл карты, с которой будет производиться работа.
+    /// Handle de la carte avec laquelle l'opération sera effectuée.
     SCARDHANDLE hCard;
-    /// Протокол, по которому работает карта.
+    /// Protocole utilisé par la carte.
     PCSC::ProtocolTypes mActiveProtocol;
-    /// Имя считывателя, уведомления от которого обрабатываются данным сервис-провайдером.
-    /// Может либо быть явно заданным в настройках, либо заполнятся в момент обнаружения
-    /// карточки в любом из доступных считывателей. В последнем случае, до тех пор, пока
-    /// карточка не будет вынута, все события от прочих считывателей будут игнорироваться.
+    /// Nom du lecteur dont les notifications sont traitées par ce fournisseur de services.
+    /// Peut être explicitement spécifié dans les paramètres, ou rempli au moment de la détection
+    /// de la carte dans n'importe quel lecteur disponible. Dans ce dernier cas, tant que
+    /// la carte n'est pas retirée, tous les événements des autres lecteurs seront ignorés.
     std::string mBindedReaderName;
-    /// Настройки данного сервиса.
+    /// Paramètres de ce service.
     Settings mSettings;
-    /// Флаг, отвечающий за то, что после создания сервиса он уже узнал текущее
-    /// состояние считывателей. При создании сервиса данный флаг выставлен в `false`,
-    /// а при первом уведомлении о считывателях он устанавливается в `true`.
+    /// Drapeau indiquant qu'après la création du service, il a déjà pris connaissance de l'état actuel
+    /// des lecteurs. Lors de la création du service, ce drapeau est mis à `false`,
+    /// et lors de la première notification des lecteurs, il est mis à `true`.
     bool mInited;
-    // Данный класс будет создавать объекты данного класса, вызывая конструктор.
+    // Cette classe créera des objets de cette classe en appelant le constructeur.
     friend class ServiceContainer;
 private:
-    /** Открывает указанную карточку для работы.
-    @param pcsc Ресурсный менеджер подсистемы PC/SC.
-    @param hService Хендл, присвоенный сервису XFS-менеджером.
-    @param settings Настройки XFS-сервиса.
+    /** Ouvre la carte spécifiée pour l'opération.
+    @param pcsc Gestionnaire de ressources du sous-système PC/SC.
+    @param hService Handle attribué au service par le gestionnaire XFS.
+    @param settings Paramètres du service XFS.
     */
     Service(Manager& pcsc, HSERVICE hService, const Settings& settings);
 public:
@@ -63,38 +63,38 @@ public:
     PCSC::Status unlock();
 
     inline void setTraceLevel(DWORD level) { mSettings.traceLevel = level; }
-    /** Данный метод вызывается при любом изменении любого считывателя и при изменении количества считывателей.
+    /** Cette méthode est appelée lors de tout changement de lecteur et lors du changement du nombre de lecteurs.
     @param state
-        Информация о текущем состоянии изменившегося считывателя.
+        Informations sur l'état actuel du lecteur modifié.
     */
     void notify(const SCARD_READERSTATE& state, bool deviceChange);
-    /** Проверяет, что сервис ожидает сообщения от данного считывателя. */
+    /** Vérifie que le service attend des messages de ce lecteur. */
     bool match(const SCARD_READERSTATE& state, bool deviceChange);
-public:// Функции, вызываемые в WFPGetInfo
+public:// Fonctions appelées dans WFPGetInfo
     std::pair<WFSIDCSTATUS*, PCSC::Status> getStatus();
     std::pair<WFSIDCCAPS*, PCSC::Status> getCaps() const;
-public:// Функции, вызываемые в WFPExecute
-    /** Начинает операцию ожидания вставки карточки в считыватель. Как только карточка
-        будет вставлена в считыватель, генерирует сообщение `WFS_EXEE_IDC_MEDIAINSERTED`,
-        а затем сообщение `WFS_EXECUTE_COMPLETE` с результатом `WFS_SUCCESS`.
+public:// Fonctions appelées dans WFPExecute
+    /** Démarre l'opération d'attente de l'insertion d'une carte dans le lecteur. Dès que la carte
+        est insérée dans le lecteur, un message `WFS_EXEE_IDC_MEDIAINSERTED` est généré,
+        puis un message `WFS_EXECUTE_COMPLETE` avec le résultat `WFS_SUCCESS`.
     @par
-        Если карточка не появится в считывателе за время `dwTimeOut`, то генерируется
-        сообщение `WFS_EXECUTE_COMPLETE` с результатом `WFS_ERR_TIMEOUT`.
+        Si la carte n'apparaît pas dans le lecteur pendant le temps `dwTimeOut`, alors un message
+        `WFS_EXECUTE_COMPLETE` avec le résultat `WFS_ERR_TIMEOUT` est généré.
     @par
-        Если операция ожидания была отменена, то генерируется сообщение
-        `WFS_EXECUTE_COMPLETE` с результатом `WFS_ERR_CANCELED`.
+        Si l'opération d'attente a été annulée, alors un message
+        `WFS_EXECUTE_COMPLETE` avec le résultat `WFS_ERR_CANCELED` est généré.
 
     @param dwTimeOut
-        Таймаут ожидания появления в считывателе карточки.
+        Délai d'attente pour l'apparition de la carte dans le lecteur.
     @param hWnd
-        Окно, которому будет доставлено сообщение `WFS_EXECUTE_COMPLETE` с результатом
-        выполнения функции.
+        Fenêtre à laquelle le message `WFS_EXECUTE_COMPLETE` avec le résultat
+        de l'exécution de la fonction sera livré.
     @param ReqID
-        Трекинговый номер для отслеживания запроса, передается в сообщении
+        Numéro de suivi pour suivre la requête, passé dans le message
         `WFS_EXECUTE_COMPLETE`.
     @param forRead
-        Список данных, которые необходимо прочитать. Реально читаются только `WFS_IDC_CHIP`,
-        для всех остальных типов возвращается признак того, что значение прочитать не удалось.
+        Liste des données à lire. Seul `WFS_IDC_CHIP` est réellement lu,
+        pour tous les autres types, un indicateur que la valeur n'a pas pu être lue est retourné.
     */
     void asyncRead(DWORD dwTimeOut, HWND hWnd, REQUESTID ReqID, XFS::ReadFlags forRead);
 
@@ -103,19 +103,19 @@ public:// Функции, вызываемые в WFPExecute
     WFSIDCCARDDATA* readTrack2() const;
     WFSIDCCARDDATA** wrap(WFSIDCCARDDATA* iccData, XFS::ReadFlags forRead) const;
 
-    /** Осуществляет передачу данных из входного параметра чипу и получет от него ответ.
+    /** Effectue la transmission de données du paramètre d'entrée vers la puce et reçoit une réponse de celle-ci.
 
     @param input
-        Буфер, полученный от подсистемы XFS, содержащий параметры протокола и передаваемые данные.
+        Tampon reçu du sous-système XFS, contenant les paramètres du protocole et les données transmises.
 
     @return
-        Пару, содержащую буфер, который необходимо передать приложению (оно заботится об освобождении
-        памяти) и статус выполнения команды.
+        Une paire contenant le tampon à transmettre à l'application (elle gère la libération de la mémoire)
+        et le statut d'exécution de la commande.
     */
     std::pair<WFSIDCCHIPIO*, PCSC::Status> transmit(const WFSIDCCHIPIO* input) const;
-    /// Выполняет реинициализацию чипа.
+    /// Effectue la réinitialisation de la puce.
     std::pair<WFSIDCCHIPPOWEROUT*, PCSC::Status> reset(XFS::ResetAction action) const;
-public:// Служебные функции
+public:// Fonctions de service
     inline HSERVICE handle() const { return hService; }
     inline const Settings& settings() const { return mSettings; }
     inline const std::string& bindedReader() const { return mBindedReaderName; }

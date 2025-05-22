@@ -7,16 +7,16 @@
 #include "Utils/Flags.h"
 
 #include <vector>
-// Для WORD
+// Pour WORD
 #include <windef.h>
 // PC/CS API
 #include <winscard.h>
-// Определения для ридеров карт (Identification card unit (IDC))
+// Définitions pour les lecteurs de cartes (Identification card unit (IDC))
 #include <XFSIDC.h>
 
 namespace XFS {
-    /** Класс для представления состояния устройств. Позволяет преобразовать состояния в XFS
-        состояния и распечатать набор текущих флагов.
+    /** Classe pour représenter l'état des appareils. Permet de convertir les états en états XFS
+        et d'imprimer l'ensemble des drapeaux actuels.
     */
     class ResetAction : public Flags<WORD, ResetAction> {
         typedef Flags<WORD, ResetAction> _Base;
@@ -24,7 +24,7 @@ namespace XFS {
         ResetAction(WORD value) : _Base(value) {}
 
         DWORD translate() const {
-            // Хоть это и флаги, в месте использования этой функции будет установлен только один флаг.
+            // Bien que ce soient des drapeaux, un seul drapeau sera défini là où cette fonction est utilisée.
             switch (value()) {
                 case WFS_IDC_CHIPPOWERCOLD: return SCARD_UNPOWER_CARD;// Power down the card and reset it (Cold Reset).
                 case WFS_IDC_CHIPPOWERWARM: return SCARD_RESET_CARD;// Reset the card (Warm Reset).

@@ -5,41 +5,41 @@
 
 #include <map>
 
-// PC/CS API -- для SCARD_READERSTATE
+// PC/CS API -- pour SCARD_READERSTATE
 #include <winscard.h>
-// Определения для ридеров карт (Identification card unit (IDC)) -- для HSERVICE
+// Définitions pour les lecteurs de cartes (Identification card unit (IDC)) -- pour HSERVICE
 #include <XFSIDC.h>
 
 class Manager;
 class Service;
 class Settings;
 class ServiceContainer {
-    /// Тип для отображения сервисов XFS на карты PC/SC.
+    /// Type pour mapper les services XFS aux cartes PC/SC.
     typedef std::map<HSERVICE, Service*> ServiceMap;
 private:
-    /// Список карт, открытых для взаимодействия с системой XFS.
+    /// Liste des cartes ouvertes pour l'interaction avec le système XFS.
     ServiceMap services;
 public:
     ~ServiceContainer();
 public:
-    /** Проверяет, что указаный хендл сервиса является корректным хендлом карточки. */
+    /** Vérifie que le handle de service spécifié est un handle de carte valide. */
     inline bool isValid(HSERVICE hService) const {
         return services.find(hService) != services.end();
     }
-    /** @return true, если в контейнере не зарегистрировано ни одного сервиса. */
+    /** @return true si aucun service n'est enregistré dans le conteneur. */
     inline bool isEmpty() const { return services.empty(); }
 
     Service& create(Manager& manager, HSERVICE hService, const Settings& settings);
     Service& get(HSERVICE hService);
     void remove(HSERVICE hService);
-public:// Подписка на события и генерация событий
-    /** Добавляет указанное окно к подписчикам на указанные события от указанного сервиса.
-    @return `false`, если указанный `hService` не зарегистрирован в объекте, иначе `true`.
+public:// Abonnement aux événements et génération d'événements
+    /** Ajoute la fenêtre spécifiée aux abonnés aux événements spécifiés par le service spécifié.
+    @return `false` si le `hService` spécifié n'est pas enregistré dans l'objet, sinon `true`.
     */
     bool addSubscriber(HSERVICE hService, HWND hWndReg, DWORD dwEventClass);
     bool removeSubscriber(HSERVICE hService, HWND hWndReg, DWORD dwEventClass);
 public:
-    /// Уведомляет все сервисы о произошедших изменениях со считывателями.
+    /// Notifie tous les services des changements survenus aux lecteurs.
     void notifyChanges(const SCARD_READERSTATE& state, bool deviceChange);
 };
 

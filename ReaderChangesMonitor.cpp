@@ -10,28 +10,32 @@
 ReaderChangesMonitor::ReaderChangesMonitor(Manager& manager)
     : manager(manager), stopRequested(false)
 {
-    // Запускаем поток ожидания изменений.
+    //XFS::Logger() << "ReaderChangesMonitor::ReaderChangesMonitor - Starting monitor thread";
+    // Démarre le thread d'attente des changements.
     waitChangesThread.reset(new boost::thread(&ReaderChangesMonitor::run, this));
+    //XFS::Logger() << "ReaderChangesMonitor::ReaderChangesMonitor - Monitor thread started successfully";
 }
 ReaderChangesMonitor::~ReaderChangesMonitor() {
-    // Запрашиваем остановку потока.
+    //XFS::Logger() << "ReaderChangesMonitor::~ReaderChangesMonitor - Stopping monitor thread";
+    // Demande l'arrêt du thread.
     stopRequested = true;
-    // Сигнализируем о том, что необходимо прервать ожидание
+    // Signale qu'il est nécessaire d'interrompre l'attente
     cancel("ReaderChangesMonitor::~ReaderChangesMonitor");
-    // Ожидаем, пока дойдет.
+    // Attend qu'il se termine.
     waitChangesThread->join();
+    //XFS::Logger() << "ReaderChangesMonitor::~ReaderChangesMonitor - Monitor thread stopped successfully";
 }
 void ReaderChangesMonitor::run() {
-    {XFS::Logger() << "Reader changes dispatch thread runned";}
-    // Первоначально состояние неизвестное нам.
+    //XFS::Logger() << "ReaderChangesMonitor::run - Starting reader changes dispatch thread";
+    // L'état est initialement inconnu de nous.
     DWORD readersState = SCARD_STATE_UNAWARE;
     while (!stopRequested) {
-        // На входе текущее состояние считывателей -- на выходе новое состояние.
+        // En entrée, l'état actuel des lecteurs -- en sortie, le nouvel état.
         readersState = getReadersAndWaitChanges(readersState);
     }
-    XFS::Logger() << "Reader changes dispatch thread stopped";
+    //XFS::Logger() << "ReaderChangesMonitor::run - Reader changes dispatch thread stopped";
 }
-/// Получаем список имен считывателей из строки со всеми именами, разделенными символом '\0'.
+/// Obtient la liste des noms de lecteurs à partir d'une chaîne contenant tous les noms, séparés par le caractère '\0'.
 std::vector<const char*> getReaderNames(const std::vector<char>& readerNames) {
     XFS::Logger l;
     l << "Avalible readers:";
@@ -41,9 +45,9 @@ std::vector<const char*> getReaderNames(const std::vector<char>& readerNames) {
     const std::size_t size = readerNames.size();
     while (i < size) {
         const char* name = &readerNames[i];
-        // Ищем начало следующей строки.
+        // Cherche le début de la ligne suivante.
         while (i < size && readerNames[i] != '\0') ++i;
-        // Пропускаем '\0'.
+        // Saute le '\0'.
         ++i;
 
         if (i < size) {
@@ -54,86 +58,80 @@ std::vector<const char*> getReaderNames(const std::vector<char>& readerNames) {
     return names;
 }
 DWORD ReaderChangesMonitor::getReadersAndWaitChanges(DWORD readersState) {
+    //XFS::Logger() << "ReaderChangesMonitor::getReadersAndWaitChanges - Getting readers list";
     DWORD readersCount = 0;
-    // Определяем доступные считыватели: сначало количество, затем сами считыватели.
+    // Détermine les lecteurs disponibles : d'abord la quantité, puis les lecteurs eux-mêmes.
     PCSC::Status st = SCardListReaders(manager.context(), NULL, NULL, &readersCount);
-    {XFS::Logger() << "SCardListReaders[count](count=&" << readersCount << "): " << st;}
+    //XFS::Logger() << "ReaderChangesMonitor::getReadersAndWaitChanges - SCardListReaders[count] result: " << st;
 
-    // Получаем имена доступных считывателей. Все имена расположены в одной строке,
-    // разделены символом '\0' в в конце списка также символ '\0' (т.о. в конце массива
-    // идет подряд два '\0').
+    // Obtient les noms des lecteurs disponibles.
     std::vector<char> readerNames(readersCount);
     if (readersCount != 0) {
         st = SCardListReaders(manager.context(), NULL, &readerNames[0], &readersCount);
-        XFS::Logger() << "SCardListReaders[data](count=&" << readersCount << "): " << st;
+        //XFS::Logger() << "ReaderChangesMonitor::getReadersAndWaitChanges - SCardListReaders[data] result: " << st;
     }
 
     std::vector<const char*> names = getReaderNames(readerNames);
+    //XFS::Logger() << "ReaderChangesMonitor::getReadersAndWaitChanges - Found " << names.size() << " readers";
 
-    // Готовимся к ожиданию событий от всех обнаруженных считывателей и
-    // изменению их количества.
+    // Se prépare à attendre les événements de tous les lecteurs détectés et
+    // à l'évolution de leur nombre.
     std::vector<SCARD_READERSTATE> readers(1 + names.size());
-    // Считыватель со специальным именем, означающем, что необходимо мониторить
-    // появление/пропажу считывателей.
+    // Lecteur avec un nom spécial, signifiant qu'il est nécessaire de surveiller
+    // l'apparition/disparition des lecteurs.
     readers[0].szReader = "\\\\?PnP?\\Notification";
     readers[0].dwCurrentState = readersState;
 
-    // Заполняем структуры для ожидания событий от найденных считывателей.
+    // Remplit les structures pour attendre les événements des lecteurs trouvés.
     for (std::size_t i = 0; i < names.size(); ++i) {
         readers[1 + i].szReader = names[i];
     }
 
-    // Ожидаем событий от считывателей. Если их количество обновилось,
-    // то прекращаем ожидание. Повторный вход в данную процедуру случится
-    // на следующем витке цикла в run.
+    // Attend les événements des lecteurs.
     while (!waitChanges(readers)) {
         if (stopRequested) {
-            // Не важно, что возвращать, нам лишь бы выйти.
+            //XFS::Logger() << "ReaderChangesMonitor::getReadersAndWaitChanges - Stop requested, exiting";
             return 0;
         }
     }
-    // Возвращаем текущее состояние наблюдателя за считывателями.
+    //XFS::Logger() << "ReaderChangesMonitor::getReadersAndWaitChanges - Reader changes detected";
     return readers[0].dwCurrentState;
 }
 bool ReaderChangesMonitor::waitChanges(std::vector<SCARD_READERSTATE>& readers) {
-    // Данная функция блокирует выполнение до тех пор, пока не произойдет событие.
-    // Ждем его до таймаута ближайшей задачи на ожидание вставки карты.
+    //XFS::Logger() << "ReaderChangesMonitor::waitChanges - Waiting for reader changes";
     PCSC::Status st = SCardGetStatusChange(manager.context(), manager.getTimeout(), &readers[0], (DWORD)readers.size());
-    {XFS::Logger() << "SCardGetStatusChange: " << st;}
-    // Если изменение вызвано таймаутом операции, выкидываем из очереди ожидания все
-    // задачи, чей таймаут уже наступил
+    //XFS::Logger() << "ReaderChangesMonitor::waitChanges - SCardGetStatusChange result: " << st;
+
     if (st.value() == SCARD_E_TIMEOUT) {
+        //XFS::Logger() << "ReaderChangesMonitor::waitChanges - Processing timeouts";
         manager.processTimeouts(bc::steady_clock::now());
     }
+
     bool readersChanged = false;
     bool first = true;
     for (std::vector<SCARD_READERSTATE>::iterator it = readers.begin(); it != readers.end(); ++it) {
-        {
         PCSC::ReaderState diff = PCSC::ReaderState(it->dwCurrentState ^ it->dwEventState);
-        XFS::Logger() << "[" << it->szReader << "] old state = " << PCSC::ReaderState(it->dwCurrentState);
-        XFS::Logger() << "[" << it->szReader << "] new state = " << PCSC::ReaderState(it->dwEventState);
-        XFS::Logger() << "[" << it->szReader << "] diff = " << diff;
-        // XFS::Logger() << "[" << it->szReader << "] added = " << PCSC::ReaderState(it->dwEventState & diff.value());
-        // XFS::Logger() << "[" << it->szReader << "] removed = " << PCSC::ReaderState(it->dwCurrentState & diff.value());
-        }
+        //XFS::Logger() << "ReaderChangesMonitor::waitChanges - Reader [" << it->szReader << "] state change:";
+        //XFS::Logger() << "  Old state: " << PCSC::ReaderState(it->dwCurrentState);
+        //XFS::Logger() << "  New state: " << PCSC::ReaderState(it->dwEventState);
+        //XFS::Logger() << "  Diff: " << diff;
 
-        // Если что-то изменилось, уведомляем об этом всех заинтересованных.
         if (it->dwEventState & SCARD_STATE_CHANGED) {
-            // Первый элемент в списке -- объект, через который приходят
-            // уведомления об изменениях самих устройств.
             if (first) {
                 readersChanged = true;
+                //XFS::Logger() << "ReaderChangesMonitor::waitChanges - Device change detected";
             }
+            //XFS::Logger() << "ReaderChangesMonitor::waitChanges - Notifying changes for reader [" << it->szReader << "]";
             manager.notifyChanges(*it, first);
         }
-        // Cообщаем PC/SC, что мы знаем текущее состояние
         it->dwCurrentState = it->dwEventState;
         first = false;
     }
+    //XFS::Logger() << "ReaderChangesMonitor::waitChanges - Changes processed, readersChanged=" << readersChanged;
     return readersChanged;
 }
 void ReaderChangesMonitor::cancel(const char* reason) const {
-    // Сигнализируем о том, что необходимо прервать ожидание
+    //XFS::Logger() << "ReaderChangesMonitor::cancel - Cancelling wait operation, reason: " << reason;
     PCSC::Status st = SCardCancel(manager.context());
-    XFS::Logger() << "SCardCancel[" << reason << "](hContext=" << manager.context() << ") = " << st;
+    //XFS::Logger() << "ReaderChangesMonitor::cancel - SCardCancel result: " << st;
 }

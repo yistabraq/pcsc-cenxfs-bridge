@@ -8,85 +8,85 @@
 class Settings
 {
 public:
-    /// Содержит настройки для обхода всяческих проблем.
+    /// Contient les paramètres pour contourner divers problèmes.
     class Workarounds {
     public:
-        /// Содержит настройки для эмулирования второй дорожки.
+        /// Contient les paramètres pour émuler la deuxième piste.
         class Track2 {
         public:
-            /** Сообщать XFS менеджеру о возможности читать track2. Kalignite падает, если считыватель
-                не умеет читать вторую магнитную дорожку, так что для него этот параметр обязателен.
-            @par Эффект
-                Если задано, то при опросе возможностей устройства сообщается, что устройство умеет читать
-                вторую дорожку. Кроме этого начинает действовать настройка `value`, содержащая значение
-                второй дорожки, как оно будет соощено XFS-менеджеру.
-            @par Значение по умолчанию
-                По умолчанию настройка выключена, т.е. XFS-менеджеру сообщается, что чтение второй
-                дорожки не поддерживается.
+            /** Informer le gestionnaire XFS de la possibilité de lire la piste 2. Kalignite plante si le lecteur
+                ne peut pas lire la deuxième piste magnétique, donc ce paramètre est obligatoire pour lui.
+            @par Effet
+                Si activé, lors de l'interrogation des capacités de l'appareil, il est indiqué que l'appareil peut lire
+                la deuxième piste. De plus, le paramètre `value` entre en vigueur, contenant la valeur
+                de la deuxième piste telle qu'elle sera communiquée au gestionnaire XFS.
+            @par Valeur par défaut
+                Par défaut, le paramètre est désactivé, c'est-à-dire que le gestionnaire XFS est informé que la lecture de la
+                deuxième piste n'est pas prise en charge.
             */
             bool report;
-            /** Значение второй дорожки, как она будет сообщена XFS менеджеру. Это означает, что она
-                не должна содержать начального и конечного разделителей. Данное значение используется
-                только в том случае, если `report` равно `true`.
-            @par Значение по умолчанию
-                По умолчанию содержит пустую строку, что означает, что при опросе данных дорожки чтение
-                окончится со статусом `WFS_IDC_DATAMISSING`.
+            /** Valeur de la deuxième piste, telle qu'elle sera communiquée au gestionnaire XFS. Cela signifie qu'elle
+                ne doit pas contenir les séparateurs de début et de fin. Cette valeur n'est utilisée
+                que si `report` est `true`.
+            @par Valeur par défaut
+                Par défaut, contient une chaîne vide, ce qui signifie que lors de l'interrogation des données de la piste, la lecture
+                se terminera avec le statut `WFS_IDC_DATAMISSING`.
             */
             std::string value;
         public:
             Track2() : report(false) {}
         };
     public:
-        /** Kalignite по какой-то причине при выбранном протоколе общения T0 посылает команды на
-            передачу чипу данных по протоколу T1, добавляя в конец байт с количеством ожидаемых в
-            ответе байт (в экспериментах там всегда был 0, т.е. ожидается 256 байт). Однако передача
-            такого буфера SCardTransmit приводит к тому, что она возвращает код ошибки 0x57, что
-            означает некорректные данные в буфере.
-        @par Эффект
-            Если данная настройка включена, то все передаваемые данные по протоколу T0 анализируется
-            и в случае необходимости, длина данных корректируется таким образом, чтобы отсечь лишние
-            байты.
-        @par Значение по умолчанию
-            По умолчанию настройка выключена, т.е. анализ не производится.
+        /** Kalignite, pour une raison quelconque, lorsqu'il utilise le protocole de communication T0, envoie des commandes pour
+            transmettre des données à la puce via le protocole T1, en ajoutant à la fin un octet avec le nombre d'octets attendus en
+            réponse (dans les expériences, il y avait toujours 0, c'est-à-dire 256 octets attendus). Cependant, la transmission
+            d'un tel tampon à SCardTransmit fait qu'elle renvoie le code d'erreur 0x57, ce qui
+            signifie des données incorrectes dans le tampon.
+        @par Effet
+            Si ce paramètre est activé, toutes les données transmises via le protocole T0 sont analysées
+            et si nécessaire, la longueur des données est corrigée de manière à tronquer les octets
+            superflus.
+        @par Valeur par défaut
+            Par défaut, le paramètre est désactivé, c'est-à-dire que l'analyse n'est pas effectuée.
         */
         bool correctChipIO;
-        /** Функционал извлечения карты объявлен обязательным к реализации, но предусмотривается, что
-            он может отсутствовать у считывателя. В таком случае на команду извлечения карты нужно
-            вернуть код ответа, сообщающий, что такая команда не поддерживается. Kalignite, однако,
-            не ожидает такого кода ответа, хотя в возможностях устройства явно сказано, что извлечение
-            карты не поддерживается.
-        @par Эффект
-            Если данная настройка включена, то команда на выдачу карты всегда успешна.
-        @par Значение по умолчанию
-            По умолчанию настройка выключена, т.е. в ответ на команду выдачи дается код ответа "Не поддерживается".
+        /** La fonctionnalité d'éjection de carte est déclarée obligatoire à implémenter, mais il est prévu que
+            elle peut être absente du lecteur. Dans ce cas, la commande d'éjection de carte doit
+            renvoyer un code de réponse indiquant que cette commande n'est pas prise en charge. Kalignite, cependant,
+            ne s'attend pas à un tel code de réponse, bien que dans les capacités de l'appareil il soit explicitement indiqué que l'éjection
+            de carte n'est pas prise en charge.
+        @par Effet
+            Si ce paramètre est activé, la commande d'éjection de carte est toujours réussie.
+        @par Valeur par défaut
+            Par défaut, le paramètre est désactivé, c'est-à-dire qu'en réponse à la commande d'éjection, le code de réponse "Non pris en charge" est donné.
         */
         bool canEject;
-        /// Kalignite требует, чтобы считыватель умел читать треки 2, поэтому мы имеем
-        /// такую настройку.
+        /// Kalignite exige que le lecteur puisse lire les pistes 2, donc nous avons
+        /// ce paramètre.
         Track2 track2;
     public:
         Workarounds() : correctChipIO(false) {}
     };
-public:// Не перечитываемые настройки.
-    /// Название самого провайдера. Не меняется после создания настроек.
+public:// Paramètres non relus.
+    /// Nom du fournisseur lui-même. Ne change pas après la création des paramètres.
     std::string providerName;
-public:// Перечитываемые функцией reread() настройки
-    /// Название считывателя, с которым должен работать провайдер.
+public:// Paramètres relus par la fonction reread()
+    /// Nom du lecteur avec lequel le fournisseur doit fonctionner.
     std::string readerName;
-    /// Уровень подробности выводимых сообщений, чем выше, тем подробнее.
-    /// Уровень 0 -- сообщения не выводятся.
+    /// Niveau de détail des messages affichés, plus il est élevé, plus les messages sont détaillés.
+    /// Niveau 0 -- les messages ne sont pas affichés.
     int traceLevel;
-    /** Если `true`, то при открытии соединения с картой она открывается в монопольном режиме.
-    @par Значение по умолчанию
-        По умолчанию монопольный режим не используется.
+    /** Si `true`, lors de l'ouverture de la connexion avec la carte, elle est ouverte en mode exclusif.
+    @par Valeur par défaut
+        Par défaut, le mode exclusif n'est pas utilisé.
     */
     bool exclusive;
-    /// Настройки, касающиеся обхода багов реализации XFS подсистемы в Kalignite.
+    /// Paramètres concernant le contournement des bugs d'implémentation du sous-système XFS dans Kalignite.
     Workarounds workarounds;
 public:
     Settings(const char* serviceName, int traceLevel);
 
-    /// Перечитывает все настройки сервис-провайдера, кроме названия сервис-провайдера.
+    /// Relit tous les paramètres du fournisseur de service, sauf le nom du fournisseur de service.
     void reread();
     std::string toJSONString() const;
 };

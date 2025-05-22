@@ -16,13 +16,13 @@
 #include <sstream>
 #include <string>
 
-// Для REQUESTID, HSERVICE, HRESULT, LONG и DWORD
+// Pour REQUESTID, HSERVICE, HRESULT, LONG et DWORD
 #include <windef.h>
-// Для PostMessage
+// Pour PostMessage
 #include <winuser.h>
-// Для GetSystemTime
+// Pour GetSystemTime
 #include <WinBase.h>
-// Определения для ридеров карт (Identification card unit (IDC))
+// Définitions pour les lecteurs de cartes (Identification card unit (IDC))
 #include <XFSIDC.h>
 
 namespace XFS {
@@ -62,7 +62,7 @@ namespace XFS {
         }
     };
 
-    /** Класс для представления результата выполнения XFS SPI-метода. */
+    /** Classe pour représenter le résultat de l'exécution d'une méthode XFS SPI. */
     class Result {
         WFSRESULT* pResult;
     public:
@@ -72,23 +72,23 @@ namespace XFS {
         Result(REQUESTID ReqID, HSERVICE hService, HRESULT result) {
             init(ReqID, hService, result);
         }
-    public:// Заполнение результатов команд WFPGetInfo
-        /// Прикрепляет к результату указанные данные статуса.
+    public:// Remplissage des résultats des commandes WFPGetInfo
+        /// Attache les données de statut spécifiées au résultat.
         inline Result& attach(WFSIDCSTATUS* data) {
             assert(pResult != NULL);
             pResult->u.dwCommandCode = WFS_INF_IDC_STATUS;
             pResult->lpBuffer = data;
             return *this;
         }
-        /// Прикрепляет к результату указанные данные возможностей устройства.
+        /// Attache les données de capacités de l'appareil spécifiées au résultat.
         inline Result& attach(WFSIDCCAPS* data) {
             assert(pResult != NULL);
             pResult->u.dwCommandCode = WFS_INF_IDC_CAPABILITIES;
             pResult->lpBuffer = data;
             return *this;
         }
-    public:// Заполнение результатов команд WFPExecute
-        /// Прикрепляет к результату указанные данные чтения карточки.
+    public:// Remplissage des résultats des commandes WFPExecute
+        /// Attache les données de lecture de carte spécifiées au résultat.
         inline Result& attach(WFSIDCCARDDATA** data) {
             assert(pResult != NULL);
             assert(pResult->lpBuffer == NULL && "Result already has data!");
@@ -96,7 +96,7 @@ namespace XFS {
             pResult->lpBuffer = data;
             return *this;
         }
-        /// Прикрепляет к результату указанные данные с ответом чипа.
+        /// Attache les données de réponse de puce spécifiées au résultat.
         inline Result& attach(WFSIDCCHIPIO* data) {
             assert(pResult != NULL);
             assert(pResult->lpBuffer == NULL && "Result already has data!");
@@ -112,7 +112,7 @@ namespace XFS {
             return *this;
         }
     public:
-        /// Прикрепляет к результату указанные данные возможностей устройства.
+        /// Attache les données de capacités de l'appareil spécifiées au résultat.
         inline Result& attach(WFSDEVSTATUS* data) {
             assert(pResult != NULL);
             assert(pResult->lpBuffer == NULL && "Result already has data!");
@@ -120,30 +120,30 @@ namespace XFS {
             pResult->lpBuffer = data;
             return *this;
         }
-    public:// События доступности карты в считывателе.
-        /// Событие генерируется, когда считыватель обнаруживает, что в него вставлена карта.
+    public:// Événements de disponibilité de la carte dans le lecteur.
+        /// L'événement est généré lorsque le lecteur détecte qu'une carte y a été insérée.
         inline Result& cardInserted() {
             assert(pResult != NULL);
             assert(pResult->lpBuffer == NULL && "Result already has data!");
             pResult->u.dwEventID = WFS_EXEE_IDC_MEDIAINSERTED;
             return *this;
         }
-        /// Событие генерируется, когда считыватель обнаруживает, что из него вытащена карта.
+        /// L'événement est généré lorsque le lecteur détecte qu'une carte en a été retirée.
         inline Result& cardRemoved() {
             assert(pResult != NULL);
             assert(pResult->lpBuffer == NULL && "Result already has data!");
             pResult->u.dwEventID = WFS_SRVE_IDC_MEDIAREMOVED;
             return *this;
         }
-        /// Генерируется, если карта была обнаружена в считывателе во время команды
-        /// сброса (WFS_CMD_IDC_RESET). Так как карта обнаружена, считается, что она
-        /// готова к чтению.
-        /// TODO: Это может быть не так?
+        /// Généré si une carte a été détectée dans le lecteur pendant la commande
+        /// de réinitialisation (WFS_CMD_IDC_RESET). Comme la carte est détectée, elle est considérée comme
+        /// prête à être lue.
+        /// TODO: Cela pourrait ne pas être le cas ?
         inline Result& cardDetected() {
             assert(pResult != NULL);
             assert(pResult->lpBuffer == NULL && "Result already has data!");
             pResult->u.dwEventID = WFS_SRVE_IDC_MEDIADETECTED;
-            //TODO: Возможно, необходимо выделять память через WFSAllocateMore
+            //TODO: Il pourrait être nécessaire d'allouer de la mémoire via WFSAllocateMore
             pResult->lpBuffer = XFS::alloc<DWORD>(WFS_IDC_CARDREADPOSITION);
             return *this;
         }

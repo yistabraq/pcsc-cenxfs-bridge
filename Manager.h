@@ -42,7 +42,7 @@ private:
     /// Conteneur gérant les tâches asynchrones pour obtenir des données de la carte.
     TaskContainer tasks;
     /// Objet pour surveiller l'état des lecteurs et envoyer des notifications
-    /// lorsque l'état change. À la destruction, il arrête l'attente des changements.
+    /// lors du changement d'état. Lors de la destruction, il met fin à l'attente des changements.
     ReaderChangesMonitor readerChangesMonitor;
 public:
     /// Ouvre une connexion au gestionnaire du sous-système PC/SC.
@@ -71,10 +71,10 @@ public:// Gestion des tâches
     /** Annule la tâche avec le numéro de suivi spécifié, retourne `true` si une tâche avec ce
         numéro existait dans la liste, sinon `false`.
     @param hService
-        Service XFS pour lequel la tâche est annulée.
+        XFS service pour lequel la tâche est annulée.
     @param ReqID
-        Identifiant unique de la tâche à annuler. Il n'y a pas deux tâches avec le
-        même identifiant dans la liste pour un même `hService`.
+        Identifiant unique de la tâche pour annuler. Il n'y a pas deux tâches avec un
+        et le même identifiant dans la liste pour un même `hService`.
 
     @return
         `true` si une tâche avec ce numéro existait dans la liste, sinon `false`.
