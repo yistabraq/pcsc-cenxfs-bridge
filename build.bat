@@ -37,14 +37,14 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Construire le projet en mode Debug
-echo Building project (Debug)...
-cmake --build . --config Debug
+REM Construire le projet en mode Release
+echo Building project (Release)...
+cmake --build . --config Release
 
 if errorlevel 1 (
-    echo Error: Debug build failed
+    echo Error: Release build failed
     exit /b 1
 )
 
-echo Build completed successfully in Debug configuration.
+echo Build completed successfully in Release configuration.
 cd .. 

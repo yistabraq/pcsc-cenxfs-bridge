@@ -109,7 +109,7 @@ Settings::Settings(const char* serviceName, int traceLevel)
     // HKEY_LOCAL_MACHINE\SOFTWARE\XFS\SERVICE_PROVIDERS\
     // HKEY root = WFS_CFG_HKEY_XFS_ROOT;
     HKEY root = WFS_CFG_USER_DEFAULT_XFS_ROOT;// HKEY_USERS\.DEFAULT\XFS
-    providerName = RegKey(root, "LOGICAL_SERVICES").child(serviceName).value("Provider");
+    providerName = RegKey(root, "LOGICAL_SERVICES").child(serviceName).value("provider");
 
     reread();
 }

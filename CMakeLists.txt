@@ -39,6 +39,11 @@ if(MSVC)
     add_compile_options(/W4 /EHsc)
     if(ENABLE_DEBUG)
         add_compile_definitions(_DEBUG)
+        # Activer le débogage CRT en mode Debug
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /D_DEBUG")
+    else()
+        # Utiliser la version release du CRT en mode Release
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
     endif()
     add_compile_definitions(
         _WIN32_WINNT=0x0501
@@ -79,6 +84,7 @@ add_definitions(
     -D_X86_
     -DWINVER=0x0501
     -D_WIN32_WINNT=0x0501
+    -DWFS_DYNAMIC_LOAD  # Indique que les fonctions XFS sont chargées dynamiquement
 )
 
 # Sources du projet
@@ -108,12 +114,21 @@ set_target_properties(PCSCspi PROPERTIES
 )
 
 # Lier les bibliothèques
-target_link_libraries(PCSCspi
+target_link_libraries(PCSCspi PRIVATE
     ${Boost_LIBRARIES}
-    ${XFS_SDK}/LIB/xfs_conf.lib
-    ${XFS_SDK}/LIB/xfs_supp.lib
-    ${XFS_SDK}/LIB/msxfs.lib
-    
+    winscard
+    "${XFS_SDK}/LIB/msxfs.lib"
+)
+
+# Copier les DLLs XFS dans le répertoire de sortie
+add_custom_command(TARGET PCSCspi POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:PCSCspi>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${XFS_SDK}/LIB/msxfs.dll"
+        "${XFS_SDK}/LIB/xfs_conf.dll"
+        "${XFS_SDK}/LIB/xfs_supp.dll"
+        $<TARGET_FILE_DIR:PCSCspi>
+    COMMENT "Copying XFS DLLs to output directory"
 )
 
 # Installation

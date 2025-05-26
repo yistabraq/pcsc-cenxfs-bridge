@@ -6,6 +6,7 @@
 
 #include "XFS/Result.h"
 #include "XFS/Logger.h"  // Pour le logging
+#include "XFS/XFSManager.h"
 
 // Pour strncpy.
 #include <cstring>
@@ -23,10 +24,6 @@
 
 // Liaison avec la bibliothèque d'implémentation de la norme PC/SC dans Windows
 #pragma comment(lib, "winscard.lib")
-// Liaison avec la bibliothèque d'implémentation XFS
-#pragma comment(lib, "msxfs.lib")
-// Liaison avec la bibliothèque de support des fonctions de configuration XFS
-#pragma comment(lib, "xfs_conf.lib")
 // Liaison avec la bibliothèque pour l'utilisation des fonctions de fenêtre (PostMessage)
 #pragma comment(lib, "user32.lib")
 
@@ -47,7 +44,26 @@ void safecopy(char (&dst)[N1], const char (&src)[N2]) {
     objets globaux seront appelés et la connexion se fermera automatiquement.
 */
 Manager pcsc;
+
 extern "C" {
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+    switch (fdwReason) {
+        case DLL_PROCESS_ATTACH:
+            try {
+                XFS::XFSManager::getInstance().initialize();
+            } catch (const std::exception& e) {
+                XFS::Logger() << "Failed to initialize XFS Manager: " << e.what();
+                return FALSE;
+            }
+            break;
+        case DLL_PROCESS_DETACH:
+            // Le destructeur de XFSManager s'occupera de décharger les DLLs
+            break;
+    }
+    return TRUE;
+}
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 /** Tente de déterminer la présence d'un lecteur portant le nom spécifié dans les paramètres (clé ReaderName).
@@ -84,6 +100,11 @@ HRESULT SPI_API WFPOpen(HSERVICE hService, LPSTR lpszLogicalName,
                         DWORD dwSrvcVersionsRequired, LPWFSVERSION lpSrvcVersion
 ) {
     XFS::Logger() << "WFPOpen called with logical name: " << lpszLogicalName << ", timeout: " << dwTimeOut;
+    
+    if (!XFS::XFSManager::getInstance().isInitialized()) {
+        XFS::Logger() << "WFPOpen failed: XFS Manager not initialized";
+        return WFS_ERR_NOT_STARTED;
+    }
     
     // Retourne les versions supportées.
     if (lpSPIVersion != NULL) {
